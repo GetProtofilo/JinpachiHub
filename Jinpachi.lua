@@ -1,14 +1,12 @@
--- Jinpachi.lua - Inspired by https://raw.githubusercontent.com/needanewphone32-eng/tsbfiles/refs/heads/main/Main1.lua
+-- Jinpachi.lua - GPO Auto Farm Mythic Chest Script
 local player = game.Players.LocalPlayer
 local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 
 local guiEnabled = false
+local autoFarmEnabled = false
 local flying = false
 local speed = 50
-local speedBoostEnabled = false
-local jumpHeightEnabled = false
-local espEnabled = false
 local bodyVelocity
 
 -- ScreenGui in CoreGui
@@ -18,7 +16,7 @@ gui.ResetOnSpawn = false
 gui.Parent = game.CoreGui
 gui.DisplayOrder = 999
 
--- Main Frame (Inspired UI with Christmas Theme)
+-- Main Frame (Christmas Theme)
 local frame = Instance.new("Frame")
 frame.Size = UDim2.new(0, 350, 0, 300)
 frame.Position = UDim2.new(0.5, -175, 0.5, -150)
@@ -36,7 +34,7 @@ frame.BorderColor3 = Color3.fromRGB(255, 215, 0)
 frame.Visible = guiEnabled
 frame.Parent = gui
 
--- Title (Christmas-themed)
+-- Title
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, -20, 0, 40)
 title.Position = UDim2.new(0, 10, 0, 10)
@@ -74,17 +72,16 @@ frame.InputEnded:Connect(function(input)
     end
 end)
 
--- Movable Open/Close Button (Chhota)
+-- Movable Open/Close Button
 local toggleButton = Instance.new("TextButton")
 toggleButton.Size = UDim2.new(0, 30, 0, 30)
-toggleButton.Position = UDim2.new(1, -40, 1, -40)  -- Bottom-right initial
+toggleButton.Position = UDim2.new(1, -40, 1, -40)  -- Bottom-right
 toggleButton.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
 toggleButton.Text = "🎄"
 toggleButton.TextColor3 = Color3.fromRGB(0, 0, 0)
 toggleButton.TextScaled = true
 toggleButton.Parent = gui
 
--- Draggable Button
 local draggingButton = false
 local dragInputButton, dragStartButton, startPosButton
 toggleButton.InputBegan:Connect(function(input)
@@ -111,7 +108,6 @@ toggleButton.InputEnded:Connect(function(input)
     end
 end)
 
--- Toggle GUI
 toggleButton.MouseButton1Click:Connect(function()
     guiEnabled = not guiEnabled
     frame.Visible = guiEnabled
@@ -119,8 +115,8 @@ toggleButton.MouseButton1Click:Connect(function()
     toggleButton.BackgroundColor3 = guiEnabled and Color3.fromRGB(200, 0, 0) or Color3.fromRGB(255, 215, 0)
 end)
 
--- Tabs (Inspired Layout)
-local tabs = {"Movement", "Visuals", "Misc"}
+-- Tabs
+local tabs = {"Movement", "Auto Farm", "Visuals"}
 local currentTab = "Movement"
 local tabFrame = Instance.new("Frame")
 tabFrame.Size = UDim2.new(1, -20, 0, 40)
@@ -171,10 +167,10 @@ local function createTab(name)
 end
 
 local movementTab = createTab("Movement")
+local autoFarmTab = createTab("Auto Farm")
 local visualsTab = createTab("Visuals")
-local miscTab = createTab("Misc")
 
--- Features (Basic for now, will expand)
+-- Movement Features
 local flyBtn = Instance.new("TextButton")
 flyBtn.Size = UDim2.new(1, -20, 0, 50)
 flyBtn.Position = UDim2.new(0, 10, 0, 10)
@@ -215,6 +211,36 @@ speedBox.FocusLost:Connect(function()
     if n then speed = n end
 end)
 
+-- Auto Farm Feature
+local autoFarmBtn = Instance.new("TextButton")
+autoFarmBtn.Size = UDim2.new(1, -20, 0, 50)
+autoFarmBtn.Position = UDim2.new(0, 10, 0, 10)
+autoFarmBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+autoFarmBtn.Text = "Auto Farm Mythic: OFF"
+autoFarmBtn.TextColor3 = Color3.new(1, 1, 1)
+autoFarmBtn.TextScaled = true
+autoFarmBtn.Parent = autoFarmTab
+autoFarmBtn.MouseButton1Click:Connect(function()
+    autoFarmEnabled = not autoFarmEnabled
+    autoFarmBtn.Text = "Auto Farm Mythic: " .. (autoFarmEnabled and "ON" or "OFF")
+    autoFarmBtn.BackgroundColor3 = autoFarmEnabled and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 200, 0)
+end)
+
+-- Auto Farm Logic
+RunService.RenderStepped:Connect(function()
+    if autoFarmEnabled and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        local chest = workspace:FindFirstChild("MythicChest") -- Adjust name if different
+        if chest and chest:IsA("Model") then
+            player.Character.HumanoidRootPart.CFrame = chest:FindFirstChild("Handle") and chest.Handle.CFrame * CFrame.new(0, 2, 0) or chest.CFrame * CFrame.new(0, 2, 0)
+            -- Simulate interact (GPO specific remote needed)
+            -- Example: game:GetService("ReplicatedStorage"):WaitForChild("RemoteEvent"):FireServer("Interact", chest)
+            -- Note: Exact remote name unknown, need game analysis
+            wait(1) -- Delay to avoid spam
+        end
+    end
+end)
+
+-- Visuals Feature
 local espBtn = Instance.new("TextButton")
 espBtn.Size = UDim2.new(1, -20, 0, 50)
 espBtn.Position = UDim2.new(0, 10, 0, 10)
@@ -246,22 +272,4 @@ espBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-local tpBtn = Instance.new("TextButton")
-tpBtn.Size = UDim2.new(1, -20, 0, 50)
-tpBtn.Position = UDim2.new(0, 10, 0, 10)
-tpBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
-tpBtn.Text = "Teleport to Player"
-tpBtn.TextColor3 = Color3.new(1, 1, 1)
-tpBtn.TextScaled = true
-tpBtn.Parent = miscTab
-tpBtn.MouseButton1Click:Connect(function()
-    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-        local players = game.Players:GetPlayers()
-        local target = players[math.random(1, #players)]
-        if target ~= player and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-            player.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0)
-        end
-    end
-end)
-
-print("🎄 Jinpachi Hub Loaded! Tap the small button to open 🎅")
+print("🎄 Jinpachi Hub for GPO Loaded! Tap the small button to open 🎅")
