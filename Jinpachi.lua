@@ -1,4 +1,4 @@
--- Jinpachi.lua - Mobile Optimized with Movable Open/Close Button
+-- Jinpachi.lua - Inspired by https://raw.githubusercontent.com/needanewphone32-eng/tsbfiles/refs/heads/main/Main1.lua
 local player = game.Players.LocalPlayer
 local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -18,29 +18,28 @@ gui.ResetOnSpawn = false
 gui.Parent = game.CoreGui
 gui.DisplayOrder = 999
 
--- Main Frame (GUI)
+-- Main Frame (Inspired UI with Christmas Theme)
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 320, 0, 450)
-frame.Position = UDim2.new(0.5, -160, 0.5, -225)
-frame.BackgroundTransparency = 0.2
-frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-frame.BorderColor3 = Color3.fromRGB(255, 215, 0)
-frame.BorderSizePixel = 4
-frame.Visible = guiEnabled
-frame.Parent = gui
-
--- Christmas Gradient
+frame.Size = UDim2.new(0, 350, 0, 300)
+frame.Position = UDim2.new(0.5, -175, 0.5, -150)
+frame.BackgroundTransparency = 0.3
+frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 local gradient = Instance.new("UIGradient")
 gradient.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(200, 0, 0)),
-    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 180, 0)),
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 20, 20)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 200, 0)),
     ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
 }
 gradient.Parent = frame
+frame.BorderSizePixel = 2
+frame.BorderColor3 = Color3.fromRGB(255, 215, 0)
+frame.Visible = guiEnabled
+frame.Parent = gui
 
--- Title
+-- Title (Christmas-themed)
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 60)
+title.Size = UDim2.new(1, -20, 0, 40)
+title.Position = UDim2.new(0, 10, 0, 10)
 title.BackgroundTransparency = 1
 title.Text = "🎄 Jinpachi Hub 🎅"
 title.TextColor3 = Color3.fromRGB(255, 215, 0)
@@ -48,7 +47,7 @@ title.TextScaled = true
 title.Font = Enum.Font.GothamBold
 title.Parent = frame
 
--- Draggable GUI
+-- Draggable Frame
 local draggingFrame = false
 local dragInputFrame, dragStartFrame, startPosFrame
 frame.InputBegan:Connect(function(input)
@@ -77,8 +76,8 @@ end)
 
 -- Movable Open/Close Button (Chhota)
 local toggleButton = Instance.new("TextButton")
-toggleButton.Size = UDim2.new(0, 30, 0, 30)  -- Chhota button
-toggleButton.Position = UDim2.new(0, 10, 0, 10)  -- Initial position (top-left)
+toggleButton.Size = UDim2.new(0, 30, 0, 30)
+toggleButton.Position = UDim2.new(1, -40, 1, -40)  -- Bottom-right initial
 toggleButton.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
 toggleButton.Text = "🎄"
 toggleButton.TextColor3 = Color3.fromRGB(0, 0, 0)
@@ -120,60 +119,149 @@ toggleButton.MouseButton1Click:Connect(function()
     toggleButton.BackgroundColor3 = guiEnabled and Color3.fromRGB(200, 0, 0) or Color3.fromRGB(255, 215, 0)
 end)
 
--- Tabs (Basic structure, features baad mein add karenge)
+-- Tabs (Inspired Layout)
 local tabs = {"Movement", "Visuals", "Misc"}
 local currentTab = "Movement"
 local tabFrame = Instance.new("Frame")
 tabFrame.Size = UDim2.new(1, -20, 0, 40)
-tabFrame.Position = UDim2.new(0, 10, 0, 70)
-tabFrame.BackgroundTransparency = 1
+tabFrame.Position = UDim2.new(0, 10, 0, 60)
+tabFrame.BackgroundTransparency = 0.5
+tabFrame.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
 tabFrame.Parent = frame
 
 local contentFrame = Instance.new("Frame")
-contentFrame.Size = UDim2.new(1, -20, 0, 330)
-contentFrame.Position = UDim2.new(0, 10, 0, 120)
-contentFrame.BackgroundTransparency = 1
+contentFrame.Size = UDim2.new(1, -20, 0, 200)
+contentFrame.Position = UDim2.new(0, 10, 0, 110)
+contentFrame.BackgroundTransparency = 0.5
+contentFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 contentFrame.Parent = frame
 
 local tabButtons = {}
-for i, name in ipairs(tabs) do
+for i, tab in ipairs(tabs) do
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0, 90, 1, 0)
-    btn.Position = UDim2.new(0, (i-1)*100, 0, 0)
+    btn.Size = UDim2.new(0, 100, 1, 0)
+    btn.Position = UDim2.new(0, (i-1)*105, 0, 0)
     btn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
-    btn.Text = name
-    btn.TextColor3 = Color3.new(1,1,1)
+    btn.Text = tab
+    btn.TextColor3 = Color3.new(1, 1, 1)
     btn.TextScaled = true
     btn.Parent = tabFrame
-    tabButtons[name] = btn
+    tabButtons[tab] = btn
 
     btn.MouseButton1Click:Connect(function()
-        currentTab = name
+        currentTab = tab
         for _, child in pairs(contentFrame:GetChildren()) do
-            child.Visible = child.Name == name
+            child.Visible = child.Name == tab
         end
-        for n, b in pairs(tabButtons) do
-            b.BackgroundColor3 = n == name and Color3.fromRGB(255, 215, 0) or Color3.fromRGB(0, 120, 255)
+        for t, b in pairs(tabButtons) do
+            b.BackgroundColor3 = t == tab and Color3.fromRGB(255, 215, 0) or Color3.fromRGB(0, 120, 255)
         end
     end)
 end
 
-local function makeTab(name)
-    local f = Instance.new("Frame")
-    f.Name = name
-    f.Size = UDim2.new(1,0,1,0)
-    f.BackgroundTransparency = 1
-    f.Visible = name == currentTab
-    f.Parent = contentFrame
-    return f
+-- Tab Content
+local function createTab(name)
+    local tab = Instance.new("Frame")
+    tab.Name = name
+    tab.Size = UDim2.new(1, 0, 1, 0)
+    tab.BackgroundTransparency = 1
+    tab.Visible = name == currentTab
+    tab.Parent = contentFrame
+    return tab
 end
 
--- Placeholder Tabs (Features baad mein)
-makeTab("Movement")
-makeTab("Visuals")
-makeTab("Misc")
+local movementTab = createTab("Movement")
+local visualsTab = createTab("Visuals")
+local miscTab = createTab("Misc")
 
--- Notification
-print("🎄 Jinpachi Hub Mobile Loaded! Tap the small button to open 🎅")
+-- Features (Basic for now, will expand)
+local flyBtn = Instance.new("TextButton")
+flyBtn.Size = UDim2.new(1, -20, 0, 50)
+flyBtn.Position = UDim2.new(0, 10, 0, 10)
+flyBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+flyBtn.Text = "Fly: OFF"
+flyBtn.TextColor3 = Color3.new(1, 1, 1)
+flyBtn.TextScaled = true
+flyBtn.Parent = movementTab
+flyBtn.MouseButton1Click:Connect(function()
+    flying = not flying
+    flyBtn.Text = "Fly: " .. (flying and "ON" or "OFF")
+    flyBtn.BackgroundColor3 = flying and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 200, 0)
+    if flying and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        bodyVelocity = Instance.new("BodyVelocity")
+        bodyVelocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+        bodyVelocity.Parent = player.Character.HumanoidRootPart
+    else
+        if bodyVelocity then bodyVelocity:Destroy() end
+    end
+end)
+RunService.RenderStepped:Connect(function()
+    if flying and bodyVelocity and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        local cam = workspace.CurrentCamera
+        bodyVelocity.Velocity = cam.CFrame.LookVector * speed
+    end
+end)
 
--- Features will be added once GUI is visible
+local speedBox = Instance.new("TextBox")
+speedBox.Size = UDim2.new(1, -20, 0, 50)
+speedBox.Position = UDim2.new(0, 10, 0, 70)
+speedBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+speedBox.Text = "50"
+speedBox.TextColor3 = Color3.new(1, 1, 1)
+speedBox.TextScaled = true
+speedBox.Parent = movementTab
+speedBox.FocusLost:Connect(function()
+    local n = tonumber(speedBox.Text)
+    if n then speed = n end
+end)
+
+local espBtn = Instance.new("TextButton")
+espBtn.Size = UDim2.new(1, -20, 0, 50)
+espBtn.Position = UDim2.new(0, 10, 0, 10)
+espBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+espBtn.Text = "ESP: OFF"
+espBtn.TextColor3 = Color3.new(1, 1, 1)
+espBtn.TextScaled = true
+espBtn.Parent = visualsTab
+espBtn.MouseButton1Click:Connect(function()
+    espEnabled = not espEnabled
+    espBtn.Text = "ESP: " .. (espEnabled and "ON" or "OFF")
+    espBtn.BackgroundColor3 = espEnabled and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 200, 0)
+    for _, p in pairs(game.Players:GetPlayers()) do
+        if p ~= player and p.Character then
+            local hl = p.Character:FindFirstChild("JinpachiESP")
+            if espEnabled then
+                if not hl then
+                    hl = Instance.new("Highlight")
+                    hl.Name = "JinpachiESP"
+                    hl.FillTransparency = 0.5
+                    hl.FillColor = Color3.fromRGB(0, 255, 0)
+                    hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+                    hl.Parent = p.Character
+                end
+            else
+                if hl then hl:Destroy() end
+            end
+        end
+    end
+end)
+
+local tpBtn = Instance.new("TextButton")
+tpBtn.Size = UDim2.new(1, -20, 0, 50)
+tpBtn.Position = UDim2.new(0, 10, 0, 10)
+tpBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+tpBtn.Text = "Teleport to Player"
+tpBtn.TextColor3 = Color3.new(1, 1, 1)
+tpBtn.TextScaled = true
+tpBtn.Parent = miscTab
+tpBtn.MouseButton1Click:Connect(function()
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        local players = game.Players:GetPlayers()
+        local target = players[math.random(1, #players)]
+        if target ~= player and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+            player.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0)
+        end
+    end
+end)
+
+print("🎄 Jinpachi Hub Loaded! Tap the small button to open 🎅")
