@@ -1,106 +1,124 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-   Name = "Multi-Tool | PC & Mobile",
-   LoadingTitle = "Loading Systems...",
+   Name = "TSB: Elite Combat Hub",
+   LoadingTitle = "Loading Combat Modules...",
    LoadingSubtitle = "by Gemini",
-   ConfigurationSaving = {
-      Enabled = true,
-      FolderName = "GeminiScripts", 
-      FileName = "MainHub"
-   },
-   KeySystem = false -- Set to true if you want a key system
+   ConfigurationSaving = { Enabled = false }
 })
 
--- Variables for Features
-local UserInputService = game:GetService("UserInputService")
+local MainTab = Window:CreateTab("Combat & Movement", 4483362458)
+local VisualTab = Window:CreateTab("Visuals", 4483362458)
+
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local VirtualInputManager = game:GetService("VirtualInputManager") -- Used for Auto-Block
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 
-local Flying = false
+-- State Variables
 local SpeedValue = 16
-local FlySpeed = 50
+local SpeedEnabled = false
+local InfiniteDash = false
+local AutoBlockEnabled = false
 local ESPEnabled = false
 
--- TAB: Main Controls
-local MainTab = Window:CreateTab("Main Features", 4483362458) -- Icon ID
+-- 1. SPEED & AUTO-BLOCK LOOP
+RunService.RenderStepped:Connect(function()
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        -- Speed Control
+        if SpeedEnabled then
+            LocalPlayer.Character.Humanoid.WalkSpeed = SpeedValue
+        end
 
--- 1. Speed Adjustment
-MainTab:CreateSlider({
-   Name = "Walk Speed",
-   Range = {16, 500},
-   Increment = 1,
-   Suffix = "Speed",
-   CurrentValue = 16,
-   Flag = "SpeedSlider",
-   Callback = function(Value)
-      SpeedValue = Value
-      if Character:FindFirstChild("Humanoid") then
-         Character.Humanoid.WalkSpeed = Value
-      end
-   end,
+        -- Auto-Block Logic
+        if AutoBlockEnabled then
+            local targetFound = false
+            for _, plr in pairs(Players:GetPlayers()) do
+                if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                    local dist = (LocalPlayer.Character.HumanoidRootPart.Position - plr.Character.HumanoidRootPart.Position).Magnitude
+                    if dist < 15 then -- Block if enemy is closer than 15 studs
+                        targetFound = true
+                        break
+                    end
+                end
+            end
+            
+            if targetFound then
+                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game) -- Press F
+            else
+                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game) -- Release F
+            end
+        end
+    end
+end)
+
+-- 2. INFINITE DASH (Q KEY)
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if InfiniteDash and input.KeyCode == Enum.KeyCode.Q then
+        local Root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        local Hum = LocalPlayer.Character:FindFirstChild("Humanoid")
+        if Root and Hum then
+            local DashVelocity = Instance.new("BodyVelocity", Root)
+            DashVelocity.MaxForce = Vector3.new(1, 0, 1) * 500000
+            DashVelocity.Velocity = Hum.MoveDirection * 110 
+            task.wait(0.15)
+            DashVelocity:Destroy()
+        end
+    end
+end)
+
+-- UI CONTROLS: COMBAT
+MainTab:CreateToggle({
+   Name = "Auto-Block (15 Studs)",
+   CurrentValue = false,
+   Callback = function(Value) AutoBlockEnabled = Value end,
 })
 
--- 2. ESP (Highlight Players)
 MainTab:CreateToggle({
+   Name = "Infinite Dash (Q)",
+   CurrentValue = false,
+   Callback = function(Value) InfiniteDash = Value end,
+})
+
+MainTab:CreateSection("Movement")
+
+MainTab:CreateToggle({
+   Name = "Fast Run",
+   CurrentValue = false,
+   Callback = function(Value) SpeedEnabled = Value end,
+})
+
+MainTab:CreateSlider({
+   Name = "Speed Multiplier",
+   Range = {16, 65},
+   Increment = 1,
+   CurrentValue = 16,
+   Callback = function(Value) SpeedValue = Value end,
+})
+
+-- UI CONTROLS: VISUALS
+VisualTab:CreateToggle({
    Name = "Player ESP",
    CurrentValue = false,
-   Flag = "ESPToggle",
    Callback = function(Value)
       ESPEnabled = Value
-      local function applyESP(plr)
-         if plr ~= LocalPlayer and plr.Character then
-            if ESPEnabled then
-               local highlight = plr.Character:FindFirstChild("ESPHighlight") or Instance.new("Highlight", plr.Character)
-               highlight.Name = "ESPHighlight"
-               highlight.FillColor = Color3.fromRGB(255, 0, 0)
-               highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-            else
-               if plr.Character:FindFirstChild("ESPHighlight") then
-                  plr.Character.ESPHighlight:Destroy()
-               end
-            end
-         end
-      end
-
-      for _, plr in pairs(Players:GetPlayers()) do applyESP(plr) end
+      -- Script will refresh highlights automatically
    end,
 })
 
--- 3. Fly Script (Mobile & PC Friendly)
-MainTab:CreateToggle({
-   Name = "Fly Mode",
-   CurrentValue = false,
-   Flag = "FlyToggle",
-   Callback = function(Value)
-      Flying = Value
-      local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
-      
-      if Flying then
-         local bv = Instance.new("BodyVelocity", HumanoidRootPart)
-         bv.Velocity = Vector3.new(0,0,0)
-         bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-         bv.Name = "FlyVelocity"
-         
-         task.spawn(function()
-            while Flying do
-               local Cam = workspace.CurrentCamera
-               local moveDir = Character.Humanoid.MoveDirection
-               bv.Velocity = (Cam.CFrame.LookVector * (moveDir.Z * -FlySpeed)) + (Cam.CFrame.RightVector * (moveDir.X * FlySpeed))
-               if moveDir == Vector3.new(0,0,0) then bv.Velocity = Vector3.new(0,0.1,0) end
-               task.wait()
+-- ESP Refresh Loop
+task.spawn(function()
+    while task.wait(1) do
+        if ESPEnabled then
+            for _, plr in pairs(Players:GetPlayers()) do
+                if plr ~= LocalPlayer and plr.Character and not plr.Character:FindFirstChild("TSB_ESP") then
+                    local h = Instance.new("Highlight", plr.Character)
+                    h.Name = "TSB_ESP"
+                    h.FillColor = Color3.fromRGB(255, 0, 0)
+                end
             end
-            bv:Destroy()
-         end)
-      end
-   end,
-})
-
-Rayfield:Notify({
-   Title = "Script Loaded!",
-   Content = "Press the side button to hide/show GUI.",
-   Duration = 5,
-   Image = 4483362458,
-})
+        end
+    end
+end)
