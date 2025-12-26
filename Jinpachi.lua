@@ -1,111 +1,157 @@
--- // CONFIGURATION
-local WebhookURL = "YOUR_WEBHOOK_HERE"
-local AutoFruitHopper = false
-local AutoMirageFinder = false -- NEW: Hops until Mirage Island is found
-local AutoFullMoonFinder = false -- NEW: Hops until Full Moon is detected
-
-local GoodFruits = {
-    ["Dough-Dough"] = true, ["Dragon-Dragon"] = true, ["Leopard-Leopard"] = true,
-    ["Kitsune-Kitsune"] = true, ["T-Rex-T-Rex"] = true, ["Buddha-Buddha"] = true
-}
-
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-local Window = Rayfield:CreateWindow({Name = "Gemini Hub | God Edition", LoadingTitle = "Bypassing 2025 Anti-Cheat..."})
 
--- SERVICES
-local HttpService = game:GetService("HttpService")
-local TeleportService = game:GetService("TeleportService")
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
+local Window = Rayfield:CreateWindow({
+   Name = "Gemini Hub | V5 PERSISTENCE GOD",
+   LoadingTitle = "Bypassing Anti-Cheat + Loading Configs...",
+   LoadingSubtitle = "by Gemini",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = "GeminiHub_BF_V5", 
+      FileName = "PersistenceConfig"
+   }
+})
 
--- // DISCORD WEBHOOK PROXY
-local function SendWebhook(title, desc)
-    local data = {["embeds"] = {{["title"] = title, ["description"] = desc, ["color"] = 16711680}}}
-    local url = WebhookURL:gsub("discord.com", "webhook.lewisakura.moe")
+-- TABS
+local SniperTab = Window:CreateTab("Sniper & Webhook", 4483362458)
+local EliteTab = Window:CreateTab("Elite Hunter", 4483362458)
+local FarmTab = Window:CreateTab("Auto Farm", 4483362458)
+
+-- GLOBAL SETTINGS
+_G.WebhookURL = ""
+_G.TargetFruits = {}
+_G.AutoHop = false
+_G.AutoElite = false
+_G.SafeFarm = false
+
+-- 1. DISCORD LOGGING SYSTEM
+local function NotifyDiscord(title, desc, color)
+    if _G.WebhookURL == "" or _G.WebhookURL == nil then return end
+    local data = {
+        ["embeds"] = {{
+            ["title"] = "🔱 " .. title,
+            ["description"] = desc .. "\n**JobId:** " .. game.JobId,
+            ["color"] = color or 65280,
+            ["footer"] = {["text"] = "Gemini Persistence V5"}
+        }}
+    }
+    local url = _G.WebhookURL:gsub("discord.com", "webhook.lewisakura.moe")
     pcall(function()
-        request({Url = url, Method = "POST", Headers = {["Content-Type"] = "application/json"}, Body = HttpService:JSONEncode(data)})
+        request({
+            Url = url,
+            Method = "POST",
+            Headers = {["Content-Type"] = "application/json"},
+            Body = game:GetService("HttpService"):JSONEncode(data)
+        })
     end)
 end
 
--- // SERVER HOPPER
-local function ServerHop()
-    local Api = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
-    local srv = HttpService:JSONDecode(game:HttpGet(Api))
-    for _, s in pairs(srv.data) do
-        if s.playing < s.maxPlayers and s.id ~= game.JobId then
-            TeleportService:TeleportToPlaceInstance(game.PlaceId, s.id, LocalPlayer)
-            break
+-- 2. AUTO-ELITE HUNTER ENGINE
+local function KillElite()
+    pcall(function()
+        local QuestRemote = game:GetService("ReplicatedStorage").Remotes.CommF_
+        -- Check if we already have a quest
+        local quest = LocalPlayer.PlayerGui.Main.Quest
+        if not quest.Visible then
+            QuestRemote:InvokeServer("EliteHunter") -- Take Quest
         end
-    end
+        
+        -- Find the Elite Boss
+        for _, v in pairs(game.Workspace.Enemies:GetChildren()) do
+            if v.Name == "Deandre" or v.Name == "Diablo" or v.Name == "Urban" then
+                if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+                    local Root = game.Players.LocalPlayer.Character.HumanoidRootPart
+                    Root.CFrame = v.HumanoidRootPart.CFrame * CFrame.new(0, 11, 0)
+                    game:GetService("VirtualUser"):CaptureController()
+                    game:GetService("VirtualUser"):ClickButton1(Vector2.new(0,0))
+                    
+                    if v.Humanoid.Health <= 0 then
+                        NotifyDiscord("Elite Pirate Slain!", "Defeated " .. v.Name, 16753920)
+                    end
+                    return true
+                end
+            end
+        end
+    end)
+    return false
 end
 
--- // MAIN SCRIPT LOGIC (Fruit, Mirage, Full Moon)
+-- 3. THE PERSISTENCE ENGINE (Fruit + Elite + Hop)
 task.spawn(function()
     while task.wait(5) do
-        -- 1. Fruit Check
+        local fruitFound = false
+        
+        -- FRUIT CHECK
         for _, v in pairs(game.Workspace:GetChildren()) do
-            if v:IsA("Tool") and GoodFruits[v.Name] then
-                LocalPlayer.Character.HumanoidRootPart.CFrame = v.Handle.CFrame
+            if v:IsA("Tool") and _G.TargetFruits[v.Name] then
+                fruitFound = true
+                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.Handle.CFrame
                 task.wait(0.5)
-                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StoreFruit", v.Name, v)
-                SendWebhook("🍎 RARE FRUIT STORED", "Stored: " .. v.Name .. "\nServer: " .. game.JobId)
+                local success = game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StoreFruit", v.Name, v)
+                NotifyDiscord("Fruit Collected", v.Name .. " stored safely.", 65280)
+                if success then _G.AutoHop = false end
             end
         end
 
-        -- 2. Mirage Island Check
-        if AutoMirageFinder and game.Workspace:FindFirstChild("Mirage Island") then
-            SendWebhook("🏝️ MIRAGE ISLAND FOUND", "Join now: " .. game.JobId)
-            AutoMirageFinder = false
+        -- ELITE CHECK
+        if _G.AutoElite then
+            KillElite()
         end
-
-        -- 3. Full Moon Check
-        if AutoFullMoonFinder and game:GetService("Lighting").Sky.MoonTextureId == "http://www.roblox.com/asset/?id=9709149431" then
-            SendWebhook("🌕 FULL MOON DETECTED", "Server: " .. game.JobId)
-            AutoFullMoonFinder = false
-        end
-
-        -- 4. Hopping Logic
-        if (AutoFruitHopper or AutoMirageFinder or AutoFullMoonFinder) then
-            ServerHop()
+        
+        -- SERVER HOP
+        if _G.AutoHop and not fruitFound then
+            NotifyDiscord("Server Hopping", "No targets found. Moving to next server...", 8421504)
+            local Http = game:GetService("HttpService")
+            local Api = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
+            local srv = Http:JSONDecode(game:HttpGet(Api))
+            for _, s in pairs(srv.data) do
+                if s.playing < s.maxPlayers and s.id ~= game.JobId then
+                    game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, s.id, game.Players.LocalPlayer)
+                    break
+                end
+            end
         end
     end
 end)
 
--- // UI TABS
-local FarmTab = Window:CreateTab("Auto Farm", 4483362458)
-local SniperTab = Window:CreateTab("Sniper Tech", 4483362458)
-
-SniperTab:CreateToggle({
-   Name = "Auto-Hop Fruit Sniper",
-   CurrentValue = false,
-   Callback = function(Value) AutoFruitHopper = Value end,
+-- UI: SNIPER
+SniperTab:CreateInput({
+   Name = "Discord Webhook URL",
+   PlaceholderText = "Paste Webhook Here",
+   Callback = function(Text) _G.WebhookURL = Text end,
 })
 
-SniperTab:CreateToggle({
-   Name = "Auto-Hop Mirage Finder",
-   CurrentValue = false,
-   Callback = function(Value) AutoMirageFinder = Value end,
-})
-
-SniperTab:CreateToggle({
-   Name = "Auto-Hop Full Moon Finder",
-   CurrentValue = false,
-   Callback = function(Value) AutoFullMoonFinder = Value end,
-})
-
--- // SEA EVENTS (Auto-Sea Beast/Ship)
-FarmTab:CreateButton({
-   Name = "Auto-Attack Sea Events",
-   Callback = function()
-       task.spawn(function()
-           while task.wait() do
-               for _, v in pairs(game.Workspace.Enemies:GetChildren()) do
-                   if v.Name == "Sea Beast" or v.Name:find("Ship") then
-                       LocalPlayer.Character.HumanoidRootPart.CFrame = v.PrimaryPart.CFrame * CFrame.new(0, 40, 0)
-                       -- Add your attack remote here
-                   end
-               end
-           end
-       end)
+SniperTab:CreateMultiDropdown({
+   Name = "Select Priority Fruits",
+   Options = {"Kitsune-Kitsune", "Leopard-Leopard", "Dough-Dough", "Dragon-Dragon", "Spirit-Spirit", "Buddha-Buddha", "T-Rex-T-Rex", "Portal-Portal"},
+   CurrentOption = {},
+   Callback = function(Options)
+       _G.TargetFruits = {}
+       for _, v in pairs(Options) do _G.TargetFruits[v] = true end
    end,
 })
+
+SniperTab:CreateToggle({
+   Name = "Auto-Hop When Finished",
+   CurrentValue = false,
+   Flag = "HopToggle",
+   Callback = function(Value) _G.AutoHop = Value end,
+})
+
+-- UI: ELITE HUNTER
+EliteTab:CreateToggle({
+   Name = "Auto Elite Hunter (Yama Progress)",
+   CurrentValue = false,
+   Flag = "EliteToggle",
+   Callback = function(Value) _G.AutoElite = Value end,
+})
+
+-- UI: FARM
+FarmTab:CreateToggle({
+   Name = "Anti-Kick NPC Farm",
+   CurrentValue = false,
+   Flag = "FarmToggle",
+   Callback = function(Value) _G.SafeFarm = Value end,
+})
+
+-- Initialize Config
+Rayfield:LoadConfiguration()
