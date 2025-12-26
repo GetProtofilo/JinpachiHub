@@ -1,134 +1,111 @@
+-- // CONFIGURATION
+local WebhookURL = "YOUR_WEBHOOK_HERE"
+local AutoFruitHopper = false
+local AutoMirageFinder = false -- NEW: Hops until Mirage Island is found
+local AutoFullMoonFinder = false -- NEW: Hops until Full Moon is detected
+
+local GoodFruits = {
+    ["Dough-Dough"] = true, ["Dragon-Dragon"] = true, ["Leopard-Leopard"] = true,
+    ["Kitsune-Kitsune"] = true, ["T-Rex-T-Rex"] = true, ["Buddha-Buddha"] = true
+}
+
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local Window = Rayfield:CreateWindow({Name = "Gemini Hub | God Edition", LoadingTitle = "Bypassing 2025 Anti-Cheat..."})
 
-local Window = Rayfield:CreateWindow({
-   Name = "Gemini Hub | Blox Fruits",
-   LoadingTitle = "Scanning for Fruits...",
-   LoadingSubtitle = "by Gemini",
-   ConfigurationSaving = { Enabled = false }
-})
-
-local FarmTab = Window:CreateTab("Auto Farm", 4483362458)
-local FruitTab = Window:CreateTab("Fruit Finder", 4483362458)
-
-local RunService = game:GetService("RunService")
+-- SERVICES
+local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
--- Variables
-local AutoFarm = false
-local BringMob = false
-local FastAttack = false
-local FruitESP = false
+-- // DISCORD WEBHOOK PROXY
+local function SendWebhook(title, desc)
+    local data = {["embeds"] = {{["title"] = title, ["description"] = desc, ["color"] = 16711680}}}
+    local url = WebhookURL:gsub("discord.com", "webhook.lewisakura.moe")
+    pcall(function()
+        request({Url = url, Method = "POST", Headers = {["Content-Type"] = "application/json"}, Body = HttpService:JSONEncode(data)})
+    end)
+end
 
--- 1. FRUIT FINDER LOGIC
-local function CheckFruits()
-    for _, v in pairs(game.Workspace:GetChildren()) do
-        if v:IsA("Tool") and (v.Name:find("Fruit") or v:FindFirstChild("Handle")) then
-            if not v:FindFirstChild("FruitHighlight") and FruitESP then
-                local b = Instance.new("Highlight", v)
-                b.Name = "FruitHighlight"
-                b.FillColor = Color3.fromRGB(0, 255, 0)
-                
-                Rayfield:Notify({
-                    Title = "Fruit Found!",
-                    Content = "A " .. v.Name .. " has been detected on the map!",
-                    Duration = 10,
-                    Image = 4483362458,
-                })
-            end
+-- // SERVER HOPPER
+local function ServerHop()
+    local Api = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
+    local srv = HttpService:JSONDecode(game:HttpGet(Api))
+    for _, s in pairs(srv.data) do
+        if s.playing < s.maxPlayers and s.id ~= game.JobId then
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, s.id, LocalPlayer)
+            break
         end
     end
 end
 
--- 2. AUTO FARM ENGINE
+-- // MAIN SCRIPT LOGIC (Fruit, Mirage, Full Moon)
 task.spawn(function()
-    while task.wait() do
-        CheckFruits() -- Constantly scan for fruits
-        
-        if AutoFarm then
-            pcall(function()
-                for _, v in pairs(game.Workspace.Enemies:GetChildren()) do
-                    if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
-                        local Root = LocalPlayer.Character.HumanoidRootPart
-                        -- Teleport Above NPC (Safe Zone)
-                        Root.CFrame = v.HumanoidRootPart.CFrame * CFrame.new(0, 11, 0)
-                        
-                        if BringMob then
-                            for _, mob in pairs(game.Workspace.Enemies:GetChildren()) do
-                                if (mob.HumanoidRootPart.Position - v.HumanoidRootPart.Position).Magnitude < 150 then
-                                    mob.HumanoidRootPart.CFrame = v.HumanoidRootPart.CFrame
-                                    mob.HumanoidRootPart.CanCollide = false
-                                end
-                            end
-                        end
-                        
-                        if FastAttack then
-                            game:GetService("VirtualUser"):CaptureController()
-                            game:GetService("VirtualUser"):ClickButton1(Vector2.new(0,0))
-                        end
-                        break
-                    end
-                end
-            end)
+    while task.wait(5) do
+        -- 1. Fruit Check
+        for _, v in pairs(game.Workspace:GetChildren()) do
+            if v:IsA("Tool") and GoodFruits[v.Name] then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = v.Handle.CFrame
+                task.wait(0.5)
+                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StoreFruit", v.Name, v)
+                SendWebhook("🍎 RARE FRUIT STORED", "Stored: " .. v.Name .. "\nServer: " .. game.JobId)
+            end
+        end
+
+        -- 2. Mirage Island Check
+        if AutoMirageFinder and game.Workspace:FindFirstChild("Mirage Island") then
+            SendWebhook("🏝️ MIRAGE ISLAND FOUND", "Join now: " .. game.JobId)
+            AutoMirageFinder = false
+        end
+
+        -- 3. Full Moon Check
+        if AutoFullMoonFinder and game:GetService("Lighting").Sky.MoonTextureId == "http://www.roblox.com/asset/?id=9709149431" then
+            SendWebhook("🌕 FULL MOON DETECTED", "Server: " .. game.JobId)
+            AutoFullMoonFinder = false
+        end
+
+        -- 4. Hopping Logic
+        if (AutoFruitHopper or AutoMirageFinder or AutoFullMoonFinder) then
+            ServerHop()
         end
     end
 end)
 
--- UI: FARMING
-FarmTab:CreateToggle({
-   Name = "Auto Farm (Must Have Quest)",
+-- // UI TABS
+local FarmTab = Window:CreateTab("Auto Farm", 4483362458)
+local SniperTab = Window:CreateTab("Sniper Tech", 4483362458)
+
+SniperTab:CreateToggle({
+   Name = "Auto-Hop Fruit Sniper",
    CurrentValue = false,
-   Callback = function(Value) AutoFarm = Value end,
+   Callback = function(Value) AutoFruitHopper = Value end,
 })
 
-FarmTab:CreateToggle({
-   Name = "Bring Mobs (Stack NPCs)",
+SniperTab:CreateToggle({
+   Name = "Auto-Hop Mirage Finder",
    CurrentValue = false,
-   Callback = function(Value) BringMob = Value end,
+   Callback = function(Value) AutoMirageFinder = Value end,
 })
 
-FarmTab:CreateToggle({
-   Name = "Fast Attack",
+SniperTab:CreateToggle({
+   Name = "Auto-Hop Full Moon Finder",
    CurrentValue = false,
-   Callback = function(Value) FastAttack = Value end,
+   Callback = function(Value) AutoFullMoonFinder = Value end,
 })
 
--- UI: FRUIT FINDER
-FruitTab:CreateToggle({
-   Name = "Fruit ESP & Notifier",
-   CurrentValue = false,
-   Callback = function(Value) FruitESP = Value end,
-})
-
-FruitTab:CreateButton({
-   Name = "Teleport to Fruit",
+-- // SEA EVENTS (Auto-Sea Beast/Ship)
+FarmTab:CreateButton({
+   Name = "Auto-Attack Sea Events",
    Callback = function()
-       local found = false
-       for _, v in pairs(game.Workspace:GetChildren()) do
-           if v:IsA("Tool") and (v.Name:find("Fruit") or v:FindFirstChild("Handle")) then
-               LocalPlayer.Character.HumanoidRootPart.CFrame = v.Handle.CFrame
-               found = true
-               break
+       task.spawn(function()
+           while task.wait() do
+               for _, v in pairs(game.Workspace.Enemies:GetChildren()) do
+                   if v.Name == "Sea Beast" or v.Name:find("Ship") then
+                       LocalPlayer.Character.HumanoidRootPart.CFrame = v.PrimaryPart.CFrame * CFrame.new(0, 40, 0)
+                       -- Add your attack remote here
+                   end
+               end
            end
-       end
-       if not found then
-           Rayfield:Notify({Title = "No Fruit", Content = "No fruits found on the ground.", Duration = 3})
-       end
-   end,
-})
-
-FruitTab:CreateButton({
-   Name = "Server Hop (Find New Fruits)",
-   Callback = function()
-       local Http = game:GetService("HttpService")
-       local TPS = game:GetService("TeleportService")
-       local Api = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
-       local _srv = Http:JSONDecode(game:HttpGet(Api))
-       for _, s in pairs(_srv.data) do
-           if s.playing < s.maxPlayers then
-               TPS:TeleportToPlaceInstance(game.PlaceId, s.id, LocalPlayer)
-               break
-           end
-       end
+       end)
    end,
 })
