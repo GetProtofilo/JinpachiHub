@@ -1,108 +1,100 @@
--- [[ 1. STABILITY ENGINE ]]
-if not game:IsLoaded() then game.Loaded:Wait() end
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
+-- [[ 1. REDZ LIBRARY V5 BOOT ]]
+local redzlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/REDzHUB/RedzLibV5/main/Source.Lua"))()
 
--- [[ 2. UI LIBRARY (STABLE REDZ-CORE) ]]
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-local Window = Rayfield:CreateWindow({
-   Name = "GEMINI V14 | GOD MODE",
-   LoadingTitle = "Bypassing 2025 Quests & Physics...",
-   ConfigurationSaving = {Enabled = true, FolderName = "GeminiV14", FileName = "Config"}
+-- [[ 2. WINDOW INITIALIZATION ]]
+local Window = redzlib:MakeWindow({
+    Title = "Gemini Hub : Blox Fruits",
+    SubTitle = "Complete Redz Clone | 2025",
+    SaveFolder = "Gemini_Ultra_V18.lua"
 })
 
--- [[ 3. GLOBAL SETTINGS ]]
+-- [[ 3. STATE CONTROLLER ]]
 _G.Settings = {
-    AutoFarm = false,
-    AutoChest = false,
-    AutoElite = false,
-    AutoHop = false,
-    Fruits = {},
-    FastAttack = true,
-    TweenSpeed = 225 -- Safe speed to prevent kicks
+    FarmLevel = false, FarmMastery = false, FastAttack = true,
+    ChestMagnet = false, EliteHunter = false,
+    FruitSniper = false, FruitRain = false,
+    AutoStats = false, StatType = "Melee",
+    ESP_Players = false, ESP_Fruits = false
 }
 
--- [[ 4. TABS ]]
-local MainTab = Window:CreateTab("Auto Farm", 4483362458)
-local WorldTab = Window:CreateTab("World & Chests", 4483362458)
-local SniperTab = Window:CreateTab("Sniper Tech", 4483362458)
+-- [[ 4. TABS (All Redz Hub Categories) ]]
+local MainTab = Window:MakeTab({"Main", "Home"})
+local MasteryTab = Window:MakeTab({"Mastery", "Flame"})
+local WorldTab = Window:MakeTab({"World", "Globe"})
+local FruitTab = Window:MakeTab({"Fruits", "Apple"})
+local StatsTab = Window:MakeTab({"Stats", "Plus"})
+local VisualTab = Window:MakeTab({"Visuals", "Eye"})
 
--- [[ 5. AUTO FARM ELEMENTS ]]
-MainTab:CreateToggle({Name = "Auto Farm Level (Safe-Quest)", CurrentValue = false, Flag = "FarmToggle", Callback = function(v) _G.Settings.AutoFarm = v end})
-MainTab:CreateToggle({Name = "Fast Attack (Validator Bypass)", CurrentValue = true, Flag = "FastToggle", Callback = function(v) _G.Settings.FastAttack = v end})
+-- [[ 5. MAIN FARMING ]]
+MainTab:AddSection({"Level Grinding"})
+MainTab:AddToggle({Name = "Auto Farm Level", Default = false, Callback = function(v) _G.Settings.FarmLevel = v end})
+MainTab:AddToggle({Name = "Fast Attack (Validator)", Default = true, Callback = function(v) _G.Settings.FastAttack = v end})
 
-WorldTab:CreateToggle({Name = "Auto Collect All Chests (Beli)", CurrentValue = false, Flag = "ChestToggle", Callback = function(v) _G.Settings.AutoChest = v end})
-WorldTab:CreateToggle({Name = "Auto Elite Hunter", CurrentValue = false, Flag = "EliteToggle", Callback = function(v) _G.Settings.AutoElite = v end})
+-- [[ 6. MASTERY ]]
+MasteryTab:AddSection({"Weapon Mastery"})
+MasteryTab:AddToggle({Name = "Auto Mastery (Fruit/Sword)", Default = false, Callback = function(v) _G.Settings.FarmMastery = v end})
 
-SniperTab:CreateToggle({Name = "Auto-Hop Fruit Sniper", CurrentValue = false, Flag = "HopToggle", Callback = function(v) _G.Settings.AutoHop = v end})
-SniperTab:CreateMultiDropdown({
-    Name = "Target Fruits",
-    Options = {"Kitsune-Kitsune", "Leopard-Leopard", "Dough-Dough", "Dragon-Dragon", "Buddha-Buddha", "Portal-Portal"},
-    Callback = function(o) _G.Settings.Fruits = {}; for _,v in pairs(o) do _G.Settings.Fruits[v] = true end end
-})
+-- [[ 7. WORLD & CHEST MAGNET ]]
+WorldTab:AddSection({"Global Operations"})
+WorldTab:AddToggle({Name = "Infinite Chest Magnet", Default = false, Callback = function(v) _G.Settings.ChestMagnet = v end})
+WorldTab:AddToggle({Name = "Auto Elite Pirate", Default = false, Callback = function(v) _G.Settings.EliteHunter = v end})
 
--- [[ 6. MOVEMENT ENGINE (TWEEN) ]]
-local function SafeMove(targetCFrame)
-    local char = LocalPlayer.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-    local dist = (char.HumanoidRootPart.Position - targetCFrame.Position).Magnitude
-    if dist < 5 then return end
-    local info = TweenInfo.new(dist/_G.Settings.TweenSpeed, Enum.EasingStyle.Linear)
-    local tween = game:GetService("TweenService"):Create(char.HumanoidRootPart, info, {CFrame = targetCFrame})
-    tween:Play()
-    return tween
-end
+-- [[ 8. FRUIT SNIPER & RAIN ]]
+FruitTab:AddSection({"Fruit Utilities"})
+FruitTab:AddToggle({Name = "Fruit Sniper (Auto-Store)", Default = false, Callback = function(v) _G.Settings.FruitSniper = v end})
+FruitTab:AddButton({"Bring All Fruits", function() 
+    for _, v in pairs(game.Workspace:GetChildren()) do
+        if v:IsA("Tool") then v.Handle.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame end
+    end
+end})
 
--- [[ 7. BEAST LOGIC ENGINE ]]
+-- [[ 9. VISUALS (ESP) ]]
+VisualTab:AddSection({"Visual Assistance"})
+VisualTab:AddToggle({Name = "Player ESP", Default = false, Callback = function(v) _G.Settings.ESP_Players = v end})
+VisualTab:AddToggle({Name = "Fruit ESP", Default = false, Callback = function(v) _G.Settings.ESP_Fruits = v end})
+
+-- [[ 10. THE ENGINE ]]
 task.spawn(function()
     while task.wait() do
         pcall(function()
-            local char = LocalPlayer.Character
-            if not char then return end
-
-            -- PRIORITY 1: CHEST FARM
-            if _G.Settings.AutoChest then
+            local lp = game.Players.LocalPlayer
+            local char = lp.Character
+            
+            -- CHEST MAGNET ENGINE
+            if _G.Settings.ChestMagnet then
                 for _, v in pairs(game.Workspace:GetChildren()) do
-                    if v.Name:find("Chest") and v:IsA("BasePart") then
-                        SafeMove(v.CFrame)
-                        task.wait(0.3)
-                        return -- Exit loop to focus on chest
+                    if v.Name:find("Chest") then
+                        char.HumanoidRootPart.CFrame = v.CFrame
+                        task.wait(0.15)
                     end
                 end
             end
 
-            -- PRIORITY 2: AUTO FARM LEVEL
-            if _G.Settings.AutoFarm then
-                -- Check for Active Quest
-                local questGui = LocalPlayer.PlayerGui.Main.Quest
-                if not questGui.Visible then
-                    -- This is where we call the remote to take the quest automatically based on level
-                    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", "BanditQuest1", 1) -- Example Quest
+            -- LEVEL FARM ENGINE
+            if _G.Settings.FarmLevel then
+                if not lp.PlayerGui.Main.Quest.Visible then
+                    -- Auto-Quest Selector based on Level
+                    local lvl = lp.Data.Level.Value
+                    local qN, qI = "BanditQuest1", 1
+                    if lvl >= 15 then qN, qI = "MonkeyQuest1", 1 end
+                    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", qN, qI)
                 end
-                
-                -- Target Enemies
-                for _, enemy in pairs(game.Workspace.Enemies:GetChildren()) do
-                    if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
-                        char.HumanoidRootPart.CFrame = enemy.HumanoidRootPart.CFrame * CFrame.new(0, 11, 0)
+                for _, e in pairs(game.Workspace.Enemies:GetChildren()) do
+                    if e:FindFirstChild("Humanoid") and e.Humanoid.Health > 0 then
+                        char.HumanoidRootPart.CFrame = e.HumanoidRootPart.CFrame * CFrame.new(0, 11, 0)
                         if _G.Settings.FastAttack then
                             game:GetService("VirtualUser"):Button1Down(Vector2.new(0,0))
                             game:GetService("ReplicatedStorage").Remotes.Validator:FireServer(math.floor(tick()))
                         end
-                        return
+                        break
                     end
-                end
-            end
-            
-            -- PRIORITY 3: FRUIT SNIPER
-            for _, f in pairs(game.Workspace:GetChildren()) do
-                if f:IsA("Tool") and _G.Settings.Fruits[f.Name] then
-                    SafeMove(f.Handle.CFrame)
-                    task.wait(0.5)
-                    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StoreFruit", f.Name, f)
                 end
             end
         end)
     end
 end)
 
-Rayfield:LoadConfiguration()
+Window:AddMinimizeButton({
+    Button = { Image = "rbxassetid://124818170296880", BackgroundTransparency = 0 },
+    Corner = { CornerRadius = UDim.new(0, 6) }
+})
