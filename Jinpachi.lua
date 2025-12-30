@@ -1,100 +1,97 @@
--- [[ 1. REDZ LIBRARY V5 BOOT ]]
+-- [[ 1. LOAD REDZ LIBRARY ]]
 local redzlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/REDzHUB/RedzLibV5/main/Source.Lua"))()
 
--- [[ 2. WINDOW INITIALIZATION ]]
+-- [[ 2. WINDOW ]]
 local Window = redzlib:MakeWindow({
-    Title = "Gemini Hub : Blox Fruits",
-    SubTitle = "Complete Redz Clone | 2025",
-    SaveFolder = "Gemini_Ultra_V18.lua"
+    Title = "Gemini Hub : TSB",
+    SubTitle = "Tease & Toxic Edition",
+    SaveFolder = "Gemini_TSB_Tease.lua"
 })
 
--- [[ 3. STATE CONTROLLER ]]
-_G.Settings = {
-    FarmLevel = false, FarmMastery = false, FastAttack = true,
-    ChestMagnet = false, EliteHunter = false,
-    FruitSniper = false, FruitRain = false,
-    AutoStats = false, StatType = "Melee",
-    ESP_Players = false, ESP_Fruits = false
+-- [[ 3. SETTINGS ]]
+_G.AutoTease = false
+_G.TeaseChat = false
+_G.TeaseEmote = false
+_G.ToxicMessages = {
+    "Is that it?",
+    "Easy.",
+    "Go back to the lobby.",
+    "Are you lagging or just bad?",
+    "Nice try, I guess.",
+    "Stick to the training dummies."
 }
 
--- [[ 4. TABS (All Redz Hub Categories) ]]
-local MainTab = Window:MakeTab({"Main", "Home"})
-local MasteryTab = Window:MakeTab({"Mastery", "Flame"})
-local WorldTab = Window:MakeTab({"World", "Globe"})
-local FruitTab = Window:MakeTab({"Fruits", "Apple"})
-local StatsTab = Window:MakeTab({"Stats", "Plus"})
-local VisualTab = Window:MakeTab({"Visuals", "Eye"})
+-- [[ 4. TABS ]]
+local MainTab = Window:MakeTab({"Tease Settings", "Skull"})
+local MiscTab = Window:MakeTab({"Misc", "Settings"})
 
--- [[ 5. MAIN FARMING ]]
-MainTab:AddSection({"Level Grinding"})
-MainTab:AddToggle({Name = "Auto Farm Level", Default = false, Callback = function(v) _G.Settings.FarmLevel = v end})
-MainTab:AddToggle({Name = "Fast Attack (Validator)", Default = true, Callback = function(v) _G.Settings.FastAttack = v end})
+-- [[ 5. TEASE FEATURES ]]
+MainTab:AddSection({"Kill Teaser"})
 
--- [[ 6. MASTERY ]]
-MasteryTab:AddSection({"Weapon Mastery"})
-MasteryTab:AddToggle({Name = "Auto Mastery (Fruit/Sword)", Default = false, Callback = function(v) _G.Settings.FarmMastery = v end})
+MainTab:AddToggle({
+    Name = "Enable Auto Tease",
+    Description = "Triggers actions when you kill someone",
+    Default = false,
+    Callback = function(v) _G.AutoTease = v end
+})
 
--- [[ 7. WORLD & CHEST MAGNET ]]
-WorldTab:AddSection({"Global Operations"})
-WorldTab:AddToggle({Name = "Infinite Chest Magnet", Default = false, Callback = function(v) _G.Settings.ChestMagnet = v end})
-WorldTab:AddToggle({Name = "Auto Elite Pirate", Default = false, Callback = function(v) _G.Settings.EliteHunter = v end})
+MainTab:AddToggle({
+    Name = "Toxic Chat Message",
+    Description = "Automatically chats after a kill",
+    Default = false,
+    Callback = function(v) _G.TeaseChat = v end
+})
 
--- [[ 8. FRUIT SNIPER & RAIN ]]
-FruitTab:AddSection({"Fruit Utilities"})
-FruitTab:AddToggle({Name = "Fruit Sniper (Auto-Store)", Default = false, Callback = function(v) _G.Settings.FruitSniper = v end})
-FruitTab:AddButton({"Bring All Fruits", function() 
-    for _, v in pairs(game.Workspace:GetChildren()) do
-        if v:IsA("Tool") then v.Handle.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame end
-    end
-end})
+MainTab:AddToggle({
+    Name = "Auto Emote (G/7)",
+    Description = "Uses your equipped emote after kill",
+    Default = false,
+    Callback = function(v) _G.TeaseEmote = v end
+})
 
--- [[ 9. VISUALS (ESP) ]]
-VisualTab:AddSection({"Visual Assistance"})
-VisualTab:AddToggle({Name = "Player ESP", Default = false, Callback = function(v) _G.Settings.ESP_Players = v end})
-VisualTab:AddToggle({Name = "Fruit ESP", Default = false, Callback = function(v) _G.Settings.ESP_Fruits = v end})
-
--- [[ 10. THE ENGINE ]]
+-- [[ 6. THE LOGIC ENGINE ]]
+-- This script monitors the kills via the "Killed" event in TSB
 task.spawn(function()
-    while task.wait() do
-        pcall(function()
-            local lp = game.Players.LocalPlayer
-            local char = lp.Character
-            
-            -- CHEST MAGNET ENGINE
-            if _G.Settings.ChestMagnet then
-                for _, v in pairs(game.Workspace:GetChildren()) do
-                    if v.Name:find("Chest") then
-                        char.HumanoidRootPart.CFrame = v.CFrame
-                        task.wait(0.15)
-                    end
-                end
-            end
-
-            -- LEVEL FARM ENGINE
-            if _G.Settings.FarmLevel then
-                if not lp.PlayerGui.Main.Quest.Visible then
-                    -- Auto-Quest Selector based on Level
-                    local lvl = lp.Data.Level.Value
-                    local qN, qI = "BanditQuest1", 1
-                    if lvl >= 15 then qN, qI = "MonkeyQuest1", 1 end
-                    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", qN, qI)
-                end
-                for _, e in pairs(game.Workspace.Enemies:GetChildren()) do
-                    if e:FindFirstChild("Humanoid") and e.Humanoid.Health > 0 then
-                        char.HumanoidRootPart.CFrame = e.HumanoidRootPart.CFrame * CFrame.new(0, 11, 0)
-                        if _G.Settings.FastAttack then
-                            game:GetService("VirtualUser"):Button1Down(Vector2.new(0,0))
-                            game:GetService("ReplicatedStorage").Remotes.Validator:FireServer(math.floor(tick()))
+    while task.wait(0.1) do
+        if _G.AutoTease then
+            pcall(function()
+                -- Detect when a nearby player's health hits 0
+                for _, player in pairs(game.Players:GetPlayers()) do
+                    if player ~= game.Players.LocalPlayer and player.Character and player.Character:FindFirstChild("Humanoid") then
+                        local hum = player.Character.Humanoid
+                        local dist = (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
+                        
+                        -- If player died close to you (meaning you likely killed them)
+                        if hum.Health <= 0 and dist < 25 then
+                            
+                            -- 1. Toxic Chat
+                            if _G.TeaseChat then
+                                local msg = _G.ToxicMessages[math.random(1, #_G.ToxicMessages)]
+                                game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(msg, "All")
+                            end
+                            
+                            -- 2. Emote Tease (Simulates pressing G or 7)
+                            if _G.TeaseEmote then
+                                -- TSB Emote Keybind trigger
+                                game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.G, false, game)
+                                task.wait(0.1)
+                                game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.G, false, game)
+                            end
+                            
+                            -- Cooldown to prevent spamming
+                            task.wait(5)
                         end
-                        break
                     end
                 end
-            end
-        end)
+            end)
+        end
     end
 end)
 
-Window:AddMinimizeButton({
-    Button = { Image = "rbxassetid://124818170296880", BackgroundTransparency = 0 },
-    Corner = { CornerRadius = UDim.new(0, 6) }
+-- [[ 7. ADD DISCORD ]]
+MainTab:AddDiscordInvite({
+    Name = "Gemini Hub TSB",
+    Description = "Get the latest TSB toxic scripts",
+    Logo = "rbxassetid://15298567397",
+    Invite = "https://discord.gg/gemini"
 })
