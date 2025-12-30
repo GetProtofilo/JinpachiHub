@@ -1,144 +1,160 @@
--- [[ 1. NATIVE MASTER UI ]]
+-- [[ 1. MASTER NATIVE UI ]]
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
 local Main = Instance.new("Frame", ScreenGui)
 local MiniBtn = Instance.new("TextButton", ScreenGui)
 
-Main.Size = UDim2.new(0, 240, 0, 420)
-Main.Position = UDim2.new(0.5, -120, 0.1, 0)
-Main.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
-Main.BorderSizePixel = 0
+Main.Size = UDim2.new(0, 250, 0, 450)
+Main.Position = UDim2.new(0.5, -125, 0.05, 0)
+Main.BackgroundColor3 = Color3.fromRGB(5, 0, 0)
+Main.BorderSizePixel = 2
 Main.Active = true
 Main.Draggable = true
 
 MiniBtn.Size = UDim2.new(0, 40, 0, 40)
-MiniBtn.Position = UDim2.new(0.5, -20, 0.02, 0)
-MiniBtn.Text = "☣️"
+MiniBtn.Position = UDim2.new(0.5, -20, 0, 20)
+MiniBtn.Text = "👹"
 MiniBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 MiniBtn.TextColor3 = Color3.new(1, 0, 0)
-MiniBtn.Font = Enum.Font.GothamBold
-
 MiniBtn.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
 
 local function Style(obj, text, pos, isBtn)
-    obj.Size = UDim2.new(0.9, 0, 0, 26)
+    obj.Size = UDim2.new(0.9, 0, 0, 24)
     obj.Position = UDim2.new(0.05, 0, 0, pos)
     obj.Text = text
     obj.TextColor3 = Color3.new(1, 1, 1)
     obj.Font = Enum.Font.Code
     if isBtn then
-        obj.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+        obj.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
         obj.BorderSizePixel = 0
     else
         obj.BackgroundTransparency = 1
     end
 end
 
--- UI Setup
-local StatLabel = Instance.new("TextLabel", Main) Style(StatLabel, "KILLS: 0 | STREAK: 0", 10, false)
-local BtnToxic = Instance.new("TextButton", Main) Style(BtnToxic, "TOXIC CHAT: OFF", 45, true)
-local BtnSystem = Instance.new("TextButton", Main) Style(BtnSystem, "FAKE SYSTEM: OFF", 80, true)
-local BtnStreak = Instance.new("TextButton", Main) Style(BtnStreak, "STREAK CHAT: OFF", 115, true)
-local BtnEmote = Instance.new("TextButton", Main) Style(BtnEmote, "AUTO EMOTE: OFF", 150, true)
-local BtnDance = Instance.new("TextButton", Main) Style(BtnDance, "CORPSE DANCE: OFF", 185, true)
-local BtnSlow = Instance.new("TextButton", Main) Style(BtnSlow, "SLOW-WALK: OFF", 220, true)
-local BtnBait = Instance.new("TextButton", Main) Style(BtnBait, "OMNI-BAIT (CLICK)", 255, true)
-local QuitLabel = Instance.new("TextLabel", Main) Style(QuitLabel, "Rage-Quit Watcher: ON", 295, false)
+-- [[ UI Elements ]]
+local StatLabel = Instance.new("TextLabel", Main) Style(StatLabel, "DOMINANCE: 0", 10, false)
+local BtnRevenge = Instance.new("TextButton", Main) Style(BtnRevenge, "REVENGE TRACKER: OFF", 40, true)
+local BtnRadar = Instance.new("TextButton", Main) Style(BtnRadar, "RUNNER RADAR: OFF", 70, true)
+local BtnShadow = Instance.new("TextButton", Main) Style(BtnShadow, "SHADOW MODE: OFF", 100, true)
+local BtnMimic = Instance.new("TextButton", Main) Style(BtnMimic, "SARCASM MIMIC: OFF", 130, true)
+local BtnSpin = Instance.new("TextButton", Main) Style(BtnSpin, "SPIN-BOT TAUNT: OFF", 160, true)
+local BtnBounty = Instance.new("TextButton", Main) Style(BtnBounty, "SHOW BOUNTY BOARD", 190, true)
+local BtnToxic = Instance.new("TextButton", Main) Style(BtnToxic, "BRUTAL CHAT: OFF", 220, true)
+local BtnEmote = Instance.new("TextButton", Main) Style(BtnEmote, "AUTO EMOTE: OFF", 250, true)
+local BtnDance = Instance.new("TextButton", Main) Style(BtnDance, "CORPSE DANCE: OFF", 280, true)
 
--- [[ 2. DATA & TABLES ]]
-local Settings = {Toxic=false, System=false, StreakChat=false, Emote=false, Dance=false, Slow=false, Count=0, Streak=0}
+-- [[ 2. DATA & LOGIC ]]
+local Settings = {Revenge=false, Radar=false, Shadow=false, Mimic=false, Spin=false, Toxic=false, Emote=false, Dance=false, Count=0}
 local Victims = {}
-local RecentKills = {} 
-local Phrases = {"Sit.", "Free.", "Log out.", "Nice try.", "Stick to the tutorial.", "Free clips."}
+local RecentKills = {}
+local Killer = nil
 
--- [[ 3. TOGGLE HANDLERS ]]
+-- [[ 3. FEATURE BINDING ]]
 local function Bind(btn, key, text)
     btn.MouseButton1Click:Connect(function()
         Settings[key] = not Settings[key]
         btn.Text = text .. ": " .. (Settings[key] and "ON" or "OFF")
-        btn.BackgroundColor3 = Settings[key] and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(150, 0, 0)
-        if key == "Slow" then game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Settings.Slow and 8 or 16 end
+        btn.BackgroundColor3 = Settings[key] and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(120, 0, 0)
     end)
 end
 
-Bind(BtnToxic, "Toxic", "TOXIC CHAT")
-Bind(BtnSystem, "System", "FAKE SYSTEM")
-Bind(BtnStreak, "StreakChat", "STREAK CHAT")
-Bind(BtnEmote, "Emote", "AUTO EMOTE")
-Bind(BtnDance, "Dance", "CORPSE DANCE")
-Bind(BtnSlow, "Slow", "SLOW-WALK")
+Bind(BtnRevenge, "Revenge", "REVENGE")
+Bind(BtnRadar, "Radar", "RUNNER RADAR")
+Bind(BtnShadow, "Shadow", "SHADOW MODE")
+Bind(BtnMimic, "Mimic", "MIMIC")
+Bind(BtnSpin, "Spin", "SPIN TAUNT")
+Bind(BtnToxic, "Toxic", "BRUTAL")
+Bind(BtnEmote, "Emote", "EMOTE")
+Bind(BtnDance, "Dance", "DANCE")
 
-BtnBait.MouseButton1Click:Connect(function()
-    local s = Instance.new("Sound", game.Players.LocalPlayer.Character.HumanoidRootPart)
-    s.SoundId = "rbxassetid://1312372067"
-    s:Play()
-    game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync("...")
-end)
+-- [[ 4. CORE ENGINE FUNCTIONS ]]
 
--- [[ 4. RAGE-QUIT WATCHER ]]
-game.Players.PlayerRemoving:Connect(function(player)
-    if RecentKills[player.Name] then
-        game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync("LMAO " .. player.Name .. " ACTUALLY RAGE QUIT!")
+-- Sarcasm Mimic
+game:GetService("TextChatService").MessageReceived:Connect(function(msg)
+    if Settings.Mimic and msg.TextSource.UserId ~= game.Players.LocalPlayer.UserId then
+        local text = msg.Text:lower()
+        if text:find("hacker") or text:find("bad") or text:find("spam") then
+            local sarcastic = ""
+            for i = 1, #msg.Text do
+                local char = msg.Text:sub(i,i)
+                sarcastic = sarcastic .. (i%2==0 and char:upper() or char:lower())
+            end
+            game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync(sarcastic)
+        end
     end
 end)
 
--- [[ 5. CORE MENACE ENGINE ]]
+-- Revenge Tracker Death Detect
+game.Players.LocalPlayer.CharacterAdded:Connect(function(char)
+    char:WaitForChild("Humanoid").Died:Connect(function()
+        -- Logic to find who killed you in TSB can be complex, usually proximity based
+        for _, p in pairs(game.Players:GetPlayers()) do
+            if p ~= game.Players.LocalPlayer and p.Character and (p.Character.HumanoidRootPart.Position - char.HumanoidRootPart.Position).Magnitude < 15 then
+                Killer = p.Name
+            end
+        end
+    end)
+end)
+
+-- [[ 5. THE MAIN LOOP ]]
 task.spawn(function()
-    while task.wait(0.4) do
+    while task.wait(0.3) do
         pcall(function()
             local lp = game.Players.LocalPlayer
             local myChar = lp.Character
             if not myChar then return end
 
-            if myChar.Humanoid.Health <= 0 then Settings.Streak = 0 end
+            -- Shadow Mode
+            if Settings.Shadow then
+                for _, part in pairs(myChar:GetChildren()) do
+                    if part:IsA("BasePart") then part.Color = Color3.new(0,0,0) end
+                end
+            end
+
+            -- Spin Taunt
+            if Settings.Spin then
+                myChar.HumanoidRootPart.CFrame = myChar.HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(45), 0)
+            end
 
             for _, p in pairs(game.Players:GetPlayers()) do
                 if p ~= lp and p.Character and p.Character:FindFirstChild("Humanoid") then
                     local hum = p.Character.Humanoid
                     local root = p.Character:FindFirstChild("HumanoidRootPart")
                     local dist = (myChar.HumanoidRootPart.Position - root.Position).Magnitude
-                    
-                    if hum.Health > 0 or dist > 55 then Victims[p.Name] = nil end
 
-                    if hum.Health <= 0 and dist < 28 and not Victims[p.Name] then
+                    -- Highlighting (Revenge & Radar)
+                    if Settings.Revenge and p.Name == Killer then
+                        if not root:FindFirstChild("Highlight") then
+                            local h = Instance.new("Highlight", root); h.FillColor = Color3.new(1,0,0)
+                        end
+                    elseif Settings.Radar and hum.Health < 20 and hum.Health > 0 then
+                        if not root:FindFirstChild("Highlight") then
+                            local h = Instance.new("Highlight", root); h.FillColor = Color3.new(0,1,0)
+                        end
+                    else
+                        if root:FindFirstChild("Highlight") then root.Highlight:Destroy() end
+                    end
+
+                    -- KILL EVENT
+                    if hum.Health <= 0 and dist < 25 and not Victims[p.Name] then
                         Victims[p.Name] = true
-                        RecentKills[p.Name] = tick()
                         Settings.Count = Settings.Count + 1
-                        Settings.Streak = Settings.Streak + 1
-                        StatLabel.Text = "KILLS: "..Settings.Count.." | STREAK: "..Settings.Streak
-
-                        -- 1. Toxic Chat (Incl. Low HP check)
+                        StatLabel.Text = "DOMINANCE: "..Settings.Count
+                        
+                        -- Friend Bait
+                        game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer("/friend "..p.Name, "All")
+                        
+                        -- Mercy Timer Chat
                         if Settings.Toxic then
-                            local msg = (myChar.Humanoid.Health < 20) and "Imagine losing to me while I'm red health." or Phrases[math.random(1, #Phrases)]
-                            game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync(msg)
+                            game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync("I'll give you 60 seconds to practice before I kill you again.")
                         end
 
-                        -- 2. Fake System
-                        if Settings.System then
-                            game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync("[SYSTEM]: User " .. p.Name .. " has been flagged for 'Severe Skill Gap'.")
-                        end
-
-                        -- 3. Streak Announcement
-                        if Settings.StreakChat and Settings.Streak % 3 == 0 then
-                            game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync("🔥 UNSTOPPABLE: " .. Settings.Streak .. " KILLSTREAK! 🔥")
-                        end
-
-                        -- 4. Corpse Dance
                         if Settings.Dance then
-                            for i = 1, 10 do
-                                myChar.HumanoidRootPart.CFrame = root.CFrame * CFrame.Angles(0, math.rad(i*36), 0) * CFrame.new(0,0,4)
-                                task.wait(0.04)
+                            for i = 1, 8 do
+                                myChar.HumanoidRootPart.CFrame = root.CFrame * CFrame.Angles(0, math.rad(i*45), 0) * CFrame.new(0,0,4)
+                                task.wait(0.05)
                             end
                         end
-
-                        -- 5. Auto Emote
-                        if Settings.Emote then
-                            task.wait(0.2)
-                            game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.G, false, game)
-                            task.wait(0.1)
-                            game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.G, false, game)
-                        end
-
-                        task.delay(15, function() RecentKills[p.Name] = nil end)
                     end
                 end
             end
