@@ -46,7 +46,27 @@ local BtnDance = Instance.new("TextButton", Main) Style(BtnDance, "CORPSE DANCE:
 local BtnSlow = Instance.new("TextButton", Main) Style(BtnSlow, "SLOW-WALK: OFF", 340, true)
 local BtnBait = Instance.new("TextButton", Main) Style(BtnBait, "OMNI-BAIT (CLICK)", 370, true)
 
--- [[ 2. DATA & AUDIO ]]
+-- [[ 2. EXPANDED BRUTAL DICTIONARY (50+ PHRASES) ]]
+local Phrases = {
+    "Sit.", "Free.", "Log out.", "Embarrassing.", "Uninstall.", "Just a filler character.",
+    "Don't ever click at me again.", "Watching you fight is painful.", "Is your monitor even on?",
+    "You are the reason this game has a tutorial.", "I'm not even trying and you're still losing.",
+    "Go back to the lobby and stay there.", "Stop wasting my time.", "Nice attempt, I guess?",
+    "Stick to the NPCs.", "You are actually a bot.", "Predictable.", "Close the game.",
+    "My killstreak thanks you for the donation.", "That was your best? Sad.", "Try using your hands next time.",
+    "I've seen better fights in the lobby.", "You're just a clip for my montage.", "Don't talk, just watch.",
+    "Is this your first time playing?", "I'm bored. Get better.", "That dash was useless.",
+    "You're making this too easy.", "Refund your skills.", "Maybe try a different game?",
+    "I could beat you with a trackpad.", "Sit down and learn.", "Error 404: Skill not found.",
+    "Your parents must be disappointed.", "Stay on the ground.", "You're not that guy.",
+    "Imagine losing that bad.", "Stop running, it's embarrassing.", "Clown behavior.",
+    "You're just a minor inconvenience.", "Thanks for the free kill.", "Who invited you?",
+    "You're playing in slow motion.", "Did you forget to block?", "Awful.", "Pathetic.",
+    "I'm actually falling asleep.", "Next.", "Was that supposed to hit me?", "You look lost.",
+    "Quit while you're ahead.", "I've had harder fights with the air.", "Yawn.", "Too slow."
+}
+
+-- [[ 3. LOGIC & DATA ]]
 local Settings = {Toxic=false, System=false, Revenge=false, Radar=false, Audio=false, Voice=false, Shadow=false, Spin=false, Emote=false, Dance=false, Slow=false, Count=0, Streak=0}
 local Victims = {}
 local KillerName = ""
@@ -55,15 +75,12 @@ local Phonk = Instance.new("Sound", game.CoreGui)
 Phonk.SoundId = "rbxassetid://15243147575"; Phonk.Looped = true; Phonk.Volume = 0
 
 local Voices = {"rbxassetid://9114753549", "rbxassetid://5532591605", "rbxassetid://6566804599"}
-local Phrases = {"Sit.", "Free.", "Log out.", "Embarrassing.", "Uninstall.", "Just a filler character."}
 
--- [[ 3. TOGGLES ]]
 local function Bind(btn, key, text)
     btn.MouseButton1Click:Connect(function()
         Settings[key] = not Settings[key]
         btn.Text = text .. ": " .. (Settings[key] and "ON" or "OFF")
         btn.BackgroundColor3 = Settings[key] and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(150, 0, 0)
-        if key == "Slow" then game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Settings.Slow and 8 or 16 end
     end)
 end
 
@@ -80,33 +97,22 @@ Bind(BtnDance, "Dance", "CORPSE DANCE")
 Bind(BtnSlow, "Slow", "SLOW-WALK")
 
 BtnBait.MouseButton1Click:Connect(function()
-    local s = Instance.new("Sound", game.Players.LocalPlayer.Character.PrimaryPart)
-    s.SoundId = "rbxassetid://1312372067"; s:Play(); game.Debris:AddItem(s, 2)
-    game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync("...")
-end)
-
--- [[ 4. ENGINE ]]
-game.Players.LocalPlayer.CharacterAdded:Connect(function(c)
-    Settings.Streak = 0
-    c:WaitForChild("Humanoid").Died:Connect(function()
-        Settings.Streak = 0
-        for _, p in pairs(game.Players:GetPlayers()) do
-            if p ~= game.Players.LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                if (p.Character.HumanoidRootPart.Position - c.PrimaryPart.Position).Magnitude < 25 then
-                    KillerName = p.Name
-                end
-            end
-        end
+    pcall(function()
+        local s = Instance.new("Sound", game.Players.LocalPlayer.Character.PrimaryPart)
+        s.SoundId = "rbxassetid://1312372067"; s:Play(); game.Debris:AddItem(s, 2)
+        game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync("...")
     end)
 end)
 
+-- [[ 4. THE MASTER ENGINE ]]
 task.spawn(function()
-    while task.wait(0.3) do
+    while task.wait(0.5) do
         local lp = game.Players.LocalPlayer
         local char = lp.Character
-        if not char or not char:FindFirstChild("HumanoidRootPart") then continue end
+        if not char or not char:FindFirstChild("Humanoid") then continue end
+        
+        char.Humanoid.WalkSpeed = Settings.Slow and 8 or 16
 
-        -- Audio Volume Logic
         if Settings.Audio and Settings.Streak >= 3 then
             if not Phonk.IsPlaying then Phonk:Play() end
             Phonk.Volume = 1
@@ -114,7 +120,6 @@ task.spawn(function()
             Phonk.Volume = 0
         end
 
-        -- Shadow & Spin
         if Settings.Shadow then for _,v in pairs(char:GetChildren()) do if v:IsA("BasePart") then v.Color = Color3.new(0,0,0) end end end
         if Settings.Spin then char.HumanoidRootPart.CFrame *= CFrame.Angles(0, math.rad(45), 0) end
 
@@ -124,43 +129,65 @@ task.spawn(function()
                 local root = p.Character.HumanoidRootPart
                 local dist = (char.HumanoidRootPart.Position - root.Position).Magnitude
 
-                -- FIXED HIGHLIGHTING
-                local existing = root:FindFirstChild("MenaceHighlight")
+                -- FORCE REFRESH HIGHLIGHTS (Improved Logic)
+                local existing = p.Character:FindFirstChild("MenaceHighlight")
                 if Settings.Revenge and p.Name == KillerName then
                     if not existing then
-                        local h = Instance.new("Highlight", root); h.Name = "MenaceHighlight"; h.FillColor = Color3.new(1,0,0); h.OutlineColor = Color3.new(1,1,1)
+                        local h = Instance.new("Highlight", p.Character)
+                        h.Name = "MenaceHighlight"; h.FillColor = Color3.new(1,0,0); h.OutlineTransparency = 0
                     end
                 elseif Settings.Radar and hum.Health < 30 and hum.Health > 0 then
                     if not existing then
-                        local h = Instance.new("Highlight", root); h.Name = "MenaceHighlight"; h.FillColor = Color3.new(0,1,0); h.OutlineColor = Color3.new(1,1,1)
+                        local h = Instance.new("Highlight", p.Character)
+                        h.Name = "MenaceHighlight"; h.FillColor = Color3.new(0,1,0); h.OutlineTransparency = 0
                     end
                 else
                     if existing then existing:Destroy() end
                 end
 
                 -- KILL TRIGGER
-                if hum.Health <= 0 and dist < 28 and not Victims[p.Name] then
+                if hum.Health <= 0 and dist < 32 and not Victims[p.Name] then
                     Victims[p.Name] = true
                     Settings.Count = Settings.Count + 1
                     Settings.Streak = Settings.Streak + 1
                     StatLabel.Text = "DOMINANCE: "..Settings.Count.." | STREAK: "..Settings.Streak
 
                     if Settings.Toxic then game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync(Phrases[math.random(1,#Phrases)]) end
-                    if Settings.System then game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync("[SYSTEM]: "..p.Name.." is being ignored due to skill gap.") end
+                    if Settings.System then game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync("[SYSTEM]: "..p.Name.."'s combat privileges have been revoked due to low skill.") end
                     if Settings.Voice then
                         local s = Instance.new("Sound", game.CoreGui); s.SoundId = Voices[math.random(1,#Voices)]; s.Volume = 3; s:Play(); game.Debris:AddItem(s, 3)
                     end
                     if Settings.Dance then
-                        for i=1,6 do char.HumanoidRootPart.CFrame = root.CFrame * CFrame.Angles(0,math.rad(i*60),0) * CFrame.new(0,0,5); task.wait(0.05) end
+                        task.spawn(function()
+                            for i=1,10 do char.HumanoidRootPart.CFrame = root.CFrame * CFrame.Angles(0,math.rad(i*36),0) * CFrame.new(0,0,5); task.wait(0.05) end
+                        end)
                     end
                     if Settings.Emote then
                         game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.G, false, game)
                         task.wait(0.1); game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.G, false, game)
                     end
-                elseif hum.Health > 0 or dist > 60 then
+                elseif hum.Health > 0 then
                     Victims[p.Name] = nil
                 end
             end
         end
     end
+end)
+
+-- Death Watcher
+game.Players.LocalPlayer.CharacterAdded:Connect(function(c)
+    local hum = c:WaitForChild("Humanoid")
+    hum.Died:Connect(function()
+        Settings.Streak = 0
+        local myRoot = c:FindFirstChild("HumanoidRootPart")
+        if myRoot then
+            for _, p in pairs(game.Players:GetPlayers()) do
+                if p ~= game.Players.LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    if (p.Character.HumanoidRootPart.Position - myRoot.Position).Magnitude < 30 then
+                        KillerName = p.Name
+                    end
+                end
+            end
+        end
+    end)
 end)
