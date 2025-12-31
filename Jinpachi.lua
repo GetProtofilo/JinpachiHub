@@ -1,193 +1,155 @@
--- [[ 1. UI CORE ]]
-local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
-local Main = Instance.new("Frame", ScreenGui)
-local MiniBtn = Instance.new("TextButton", ScreenGui)
-
-Main.Size = UDim2.new(0, 220, 0, 480)
-Main.Position = UDim2.new(0.5, -110, 0.1, 0)
-Main.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-Main.BorderSizePixel = 0
-Main.Active = true
-Main.Draggable = true
-
-MiniBtn.Size = UDim2.new(0, 40, 0, 40)
-MiniBtn.Position = UDim2.new(0.5, -20, 0, 5)
-MiniBtn.Text = "👹"
-MiniBtn.BackgroundColor3 = Color3.fromRGB(30, 0, 0)
-MiniBtn.TextColor3 = Color3.new(1, 1, 1)
-MiniBtn.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
-
-local function Style(obj, text, pos, isBtn)
-    obj.Size = UDim2.new(0.9, 0, 0, 24)
-    obj.Position = UDim2.new(0.05, 0, 0, pos)
-    obj.Text = text
-    obj.TextColor3 = Color3.new(1, 1, 1)
-    obj.Font = Enum.Font.Code
-    if isBtn then
-        obj.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
-        obj.BorderSizePixel = 0
-    else
-        obj.BackgroundTransparency = 1
-    end
-end
-
--- UI Setup
-local StatLabel = Instance.new("TextLabel", Main) Style(StatLabel, "DOMINANCE: 0", 10, false)
-local BtnToxic = Instance.new("TextButton", Main) Style(BtnToxic, "BRUTAL CHAT: OFF", 40, true)
-local BtnSystem = Instance.new("TextButton", Main) Style(BtnSystem, "FAKE SYSTEM: OFF", 70, true)
-local BtnRevenge = Instance.new("TextButton", Main) Style(BtnRevenge, "KILLER ESP: OFF", 100, true)
-local BtnRadar = Instance.new("TextButton", Main) Style(BtnRadar, "RUNNER RADAR: OFF", 130, true)
-local BtnAudio = Instance.new("TextButton", Main) Style(BtnAudio, "PHONK MUSIC: OFF", 160, true)
-local BtnVoice = Instance.new("TextButton", Main) Style(BtnVoice, "VILLAIN VOICE: OFF", 190, true)
-local BtnShadow = Instance.new("TextButton", Main) Style(BtnShadow, "SHADOW MODE: OFF", 220, true)
-local BtnSpin = Instance.new("TextButton", Main) Style(BtnSpin, "SPIN TAUNT: OFF", 250, true)
-local BtnEmote = Instance.new("TextButton", Main) Style(BtnEmote, "AUTO EMOTE: OFF", 280, true)
-local BtnDance = Instance.new("TextButton", Main) Style(BtnDance, "CORPSE DANCE: OFF", 310, true)
-local BtnSlow = Instance.new("TextButton", Main) Style(BtnSlow, "SLOW-WALK: OFF", 340, true)
-local BtnBait = Instance.new("TextButton", Main) Style(BtnBait, "OMNI-BAIT (CLICK)", 370, true)
-
--- [[ 2. EXPANDED BRUTAL DICTIONARY (50+ PHRASES) ]]
-local Phrases = {
-    "Sit.", "Free.", "Log out.", "Embarrassing.", "Uninstall.", "Just a filler character.",
-    "Don't ever click at me again.", "Watching you fight is painful.", "Is your monitor even on?",
-    "You are the reason this game has a tutorial.", "I'm not even trying and you're still losing.",
-    "Go back to the lobby and stay there.", "Stop wasting my time.", "Nice attempt, I guess?",
-    "Stick to the NPCs.", "You are actually a bot.", "Predictable.", "Close the game.",
-    "My killstreak thanks you for the donation.", "That was your best? Sad.", "Try using your hands next time.",
-    "I've seen better fights in the lobby.", "You're just a clip for my montage.", "Don't talk, just watch.",
-    "Is this your first time playing?", "I'm bored. Get better.", "That dash was useless.",
-    "You're making this too easy.", "Refund your skills.", "Maybe try a different game?",
-    "I could beat you with a trackpad.", "Sit down and learn.", "Error 404: Skill not found.",
-    "Your parents must be disappointed.", "Stay on the ground.", "You're not that guy.",
-    "Imagine losing that bad.", "Stop running, it's embarrassing.", "Clown behavior.",
-    "You're just a minor inconvenience.", "Thanks for the free kill.", "Who invited you?",
-    "You're playing in slow motion.", "Did you forget to block?", "Awful.", "Pathetic.",
-    "I'm actually falling asleep.", "Next.", "Was that supposed to hit me?", "You look lost.",
-    "Quit while you're ahead.", "I've had harder fights with the air.", "Yawn.", "Too slow."
+-- [[ 1. HUB CORE: DETECTION & PLACEMENT ]]
+local Games = {
+    [2041312730]  = "MM2",
+    [10449761463] = "TSB",
+    [1153255416]  = "SlapBattles",
+    [17021312891] = "StealBrainrot"
 }
 
--- [[ 3. LOGIC & DATA ]]
-local Settings = {Toxic=false, System=false, Revenge=false, Radar=false, Audio=false, Voice=false, Shadow=false, Spin=false, Emote=false, Dance=false, Slow=false, Count=0, Streak=0}
-local Victims = {}
-local KillerName = ""
+local PlaceId, lp = game.PlaceId, game.Players.LocalPlayer
+local GameName = Games[PlaceId] or "Universal"
 
-local Phonk = Instance.new("Sound", game.CoreGui)
-Phonk.SoundId = "rbxassetid://15243147575"; Phonk.Looped = true; Phonk.Volume = 0
+-- [[ 2. TITAN UI ENGINE ]]
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+local Main = Instance.new("Frame", ScreenGui)
+Main.Size, Main.Position = UDim2.new(0, 280, 0, 520), UDim2.new(0.05, 0, 0.2, 0)
+Main.BackgroundColor3, Main.BorderSizePixel = Color3.fromRGB(12, 0, 0), 2
+Main.BorderColor3 = Color3.new(1, 0, 0)
+Main.Active, Main.Draggable = true, true
 
-local Voices = {"rbxassetid://9114753549", "rbxassetid://5532591605", "rbxassetid://6566804599"}
+local Title = Instance.new("TextLabel", Main)
+Title.Size, Title.Text = UDim2.new(1, 0, 0, 45), "🔱 APEX TITAN: " .. GameName
+Title.TextColor3, Title.BackgroundColor3 = Color3.new(1, 1, 1), Color3.fromRGB(50, 0, 0)
+Title.Font = Enum.Font.GothamBold
 
-local function Bind(btn, key, text)
-    btn.MouseButton1Click:Connect(function()
-        Settings[key] = not Settings[key]
-        btn.Text = text .. ": " .. (Settings[key] and "ON" or "OFF")
-        btn.BackgroundColor3 = Settings[key] and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(150, 0, 0)
-    end)
+local Scroll = Instance.new("ScrollingFrame", Main)
+Scroll.Size, Scroll.Position = UDim2.new(1, -10, 1, -55), UDim2.new(0, 5, 0, 50)
+Scroll.BackgroundTransparency, Scroll.CanvasSize = 1, UDim2.new(0, 0, 18, 0)
+Instance.new("UIListLayout", Scroll).Padding = UDim.new(0, 8)
+
+local function AddBtn(name, desc, callback)
+    local b = Instance.new("TextButton", Scroll)
+    b.Size, b.Text = UDim2.new(1, 0, 0, 55), "<b>" .. name .. "</b>\n<font size='10'>" .. desc .. "</font>"
+    b.RichText, b.BackgroundColor3, b.TextColor3 = true, Color3.fromRGB(20, 20, 20), Color3.new(1, 1, 1)
+    b.Font = Enum.Font.Code; b.BorderSizePixel = 0
+    b.MouseButton1Click:Connect(callback)
 end
 
-Bind(BtnToxic, "Toxic", "BRUTAL CHAT")
-Bind(BtnSystem, "System", "FAKE SYSTEM")
-Bind(BtnRevenge, "Revenge", "KILLER ESP")
-Bind(BtnRadar, "Radar", "RUNNER RADAR")
-Bind(BtnAudio, "Audio", "PHONK MUSIC")
-Bind(BtnVoice, "Voice", "VILLAIN VOICE")
-Bind(BtnShadow, "Shadow", "SHADOW MODE")
-Bind(BtnSpin, "Spin", "SPIN TAUNT")
-Bind(BtnEmote, "Emote", "AUTO EMOTE")
-Bind(BtnDance, "Dance", "CORPSE DANCE")
-Bind(BtnSlow, "Slow", "SLOW-WALK")
-
-BtnBait.MouseButton1Click:Connect(function()
-    pcall(function()
-        local s = Instance.new("Sound", game.Players.LocalPlayer.Character.PrimaryPart)
-        s.SoundId = "rbxassetid://1312372067"; s:Play(); game.Debris:AddItem(s, 2)
-        game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync("...")
-    end)
-end)
-
--- [[ 4. THE MASTER ENGINE ]]
-task.spawn(function()
-    while task.wait(0.5) do
-        local lp = game.Players.LocalPlayer
-        local char = lp.Character
-        if not char or not char:FindFirstChild("Humanoid") then continue end
-        
-        char.Humanoid.WalkSpeed = Settings.Slow and 8 or 16
-
-        if Settings.Audio and Settings.Streak >= 3 then
-            if not Phonk.IsPlaying then Phonk:Play() end
-            Phonk.Volume = 1
-        else
-            Phonk.Volume = 0
-        end
-
-        if Settings.Shadow then for _,v in pairs(char:GetChildren()) do if v:IsA("BasePart") then v.Color = Color3.new(0,0,0) end end end
-        if Settings.Spin then char.HumanoidRootPart.CFrame *= CFrame.Angles(0, math.rad(45), 0) end
-
-        for _, p in pairs(game.Players:GetPlayers()) do
-            if p ~= lp and p.Character and p.Character:FindFirstChild("Humanoid") and p.Character:FindFirstChild("HumanoidRootPart") then
-                local hum = p.Character.Humanoid
-                local root = p.Character.HumanoidRootPart
-                local dist = (char.HumanoidRootPart.Position - root.Position).Magnitude
-
-                -- FORCE REFRESH HIGHLIGHTS (Improved Logic)
-                local existing = p.Character:FindFirstChild("MenaceHighlight")
-                if Settings.Revenge and p.Name == KillerName then
-                    if not existing then
-                        local h = Instance.new("Highlight", p.Character)
-                        h.Name = "MenaceHighlight"; h.FillColor = Color3.new(1,0,0); h.OutlineTransparency = 0
-                    end
-                elseif Settings.Radar and hum.Health < 30 and hum.Health > 0 then
-                    if not existing then
-                        local h = Instance.new("Highlight", p.Character)
-                        h.Name = "MenaceHighlight"; h.FillColor = Color3.new(0,1,0); h.OutlineTransparency = 0
-                    end
-                else
-                    if existing then existing:Destroy() end
-                end
-
-                -- KILL TRIGGER
-                if hum.Health <= 0 and dist < 32 and not Victims[p.Name] then
-                    Victims[p.Name] = true
-                    Settings.Count = Settings.Count + 1
-                    Settings.Streak = Settings.Streak + 1
-                    StatLabel.Text = "DOMINANCE: "..Settings.Count.." | STREAK: "..Settings.Streak
-
-                    if Settings.Toxic then game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync(Phrases[math.random(1,#Phrases)]) end
-                    if Settings.System then game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync("[SYSTEM]: "..p.Name.."'s combat privileges have been revoked due to low skill.") end
-                    if Settings.Voice then
-                        local s = Instance.new("Sound", game.CoreGui); s.SoundId = Voices[math.random(1,#Voices)]; s.Volume = 3; s:Play(); game.Debris:AddItem(s, 3)
-                    end
-                    if Settings.Dance then
-                        task.spawn(function()
-                            for i=1,10 do char.HumanoidRootPart.CFrame = root.CFrame * CFrame.Angles(0,math.rad(i*36),0) * CFrame.new(0,0,5); task.wait(0.05) end
-                        end)
-                    end
-                    if Settings.Emote then
-                        game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.G, false, game)
-                        task.wait(0.1); game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.G, false, game)
-                    end
-                elseif hum.Health > 0 then
-                    Victims[p.Name] = nil
+-- [[ 3. MODULE: MURDER MYSTERY 2 🟢 ]]
+if GameName == "MM2" then
+    AddBtn("METATABLE SILENT AIM", "Intercepts network to hit 100% of shots", function()
+        local Meta = getrawmetatable(game); setreadonly(Meta, false); local Old = Meta.__namecall
+        Meta.__namecall = newcclosure(function(self, ...)
+            local Method, Args = getnamecallmethod(), {...}
+            if (Method == "FireServer" and (self.Name == "ThrowKnife" or self.Name == "ShootGun")) then
+                for _, v in pairs(game.Players:GetPlayers()) do
+                    if v ~= lp and v.Character then Args[1] = v.Character.HumanoidRootPart.Position end
                 end
             end
-        end
-    end
-end)
-
--- Death Watcher
-game.Players.LocalPlayer.CharacterAdded:Connect(function(c)
-    local hum = c:WaitForChild("Humanoid")
-    hum.Died:Connect(function()
-        Settings.Streak = 0
-        local myRoot = c:FindFirstChild("HumanoidRootPart")
-        if myRoot then
+            return Old(self, unpack(Args))
+        end)
+    end)
+    AddBtn("EVENT TOKEN FARM", "Instant TP to coins and 2025 tokens", function()
+        task.spawn(function()
+            while task.wait(0.2) do
+                for _,v in pairs(workspace:GetDescendants()) do
+                    if v.Name == "CoinContainer" or v.Name:find("Token") then
+                        lp.Character.HumanoidRootPart.CFrame = v:FindFirstChildOfClass("Part").CFrame
+                    end
+                end
+            end
+        end)
+    end)
+    AddBtn("ROLE X-RAY", "Reveals Murderer/Sheriff through walls", function()
+        while task.wait(1) do
             for _, p in pairs(game.Players:GetPlayers()) do
-                if p ~= game.Players.LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                    if (p.Character.HumanoidRootPart.Position - myRoot.Position).Magnitude < 30 then
-                        KillerName = p.Name
-                    end
+                if p ~= lp and p.Character then
+                    local h = p.Character:FindFirstChild("Highlight") or Instance.new("Highlight", p.Character)
+                    if p.Backpack:FindFirstChild("Knife") or p.Character:FindFirstChild("Knife") then h.FillColor = Color3.new(1,0,0)
+                    elseif p.Backpack:FindFirstChild("Gun") or p.Character:FindFirstChild("Gun") then h.FillColor = Color3.new(0,0,1)
+                    else h.FillColor = Color3.new(0,1,0) end
                 end
             end
         end
     end)
-end)
+
+-- [[ 4. MODULE: THE STRONGEST BATTLEGROUNDS 🟢 ]]
+elseif GameName == "TSB" then
+    AddBtn("COMBAT RESET (M1 TILT)", "Removes knockback from 4th hit", function()
+        local c = 0
+        game:GetService("UserInputService").InputBegan:Connect(function(i,p)
+            if not p and i.UserInputType == Enum.UserInputType.MouseButton1 then
+                c = (c + 1) % 4
+                if c == 0 then lp.Character.HumanoidRootPart.CFrame *= CFrame.new(0,0,1.5) end
+            end
+        end)
+    end)
+    AddBtn("COUNTER PREDICTOR", "Alerts you if enemy Garou/Atomic is countering", function()
+        task.spawn(function()
+            while task.wait() do
+                for _,v in pairs(game.Players:GetPlayers()) do
+                    if v ~= lp and v.Character then
+                        for _,a in pairs(v.Character.Humanoid:GetPlayingAnimationTracks()) do
+                            if a.Animation.AnimationId:find("12510170988") then
+                                print("ALERT: COUNTER DETECTED")
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+    end)
+
+-- [[ 5. MODULE: SLAP BATTLES 🟢 ]]
+elseif GameName == "SlapBattles" then
+    AddBtn("360 RAGE AURA", "Slaps everyone in 20 stud radius", function()
+        while task.wait() do
+            for _,v in pairs(game.Players:GetPlayers()) do
+                if v ~= lp and v.Character and (lp.Character.HumanoidRootPart.Position - v.Character.HumanoidRootPart.Position).Magnitude < 20 then
+                    game:GetService("ReplicatedStorage").SlapEvent:FireServer(v.Character.HumanoidRootPart)
+                end
+            end
+        end
+    end)
+    AddBtn("PHYSICS ANCHOR", "Anti-Ragdoll and Velocity Override", function()
+        game:GetService("RunService").Stepped:Connect(function()
+            lp.Character.Humanoid.PlatformStand = false
+            if lp.Character.Humanoid.FloorMaterial == Enum.Material.Air then
+                lp.Character.HumanoidRootPart.Velocity = Vector3.new(0,0,0)
+            end
+        end)
+    end)
+
+-- [[ 6. MODULE: STEAL A BRAINROT 🟢 ]]
+elseif GameName == "StealBrainrot" then
+    AddBtn("LEGENDARY SNIPER", "Auto-snatches best items from conveyor", function()
+        task.spawn(function()
+            while task.wait(0.1) do
+                for _, v in pairs(workspace.Conveyor:GetDescendants()) do
+                    if v:IsA("ClickDetector") and (v.Parent.Name:find("Legendary") or v.Parent.Name:find("Secret")) then
+                        lp.Character.HumanoidRootPart.CFrame = v.Parent.CFrame
+                        fireclickdetector(v)
+                    end
+                end
+            end
+        end)
+    end)
+    AddBtn("SHIELD BYPASS", "Steal Brainrots even if base is shielded", function()
+        -- Logic: Temporarily disables collision on the shield parts
+        for _, v in pairs(workspace.Bases:GetDescendants()) do
+            if v.Name == "Shield" then v.CanCollide = false; v.Transparency = 0.8 end
+        end
+    end)
+    AddBtn("NO SLOWDOWN", "Removes speed penalty when carrying item", function()
+        task.spawn(function()
+            while task.wait() do if lp.Character.Humanoid.WalkSpeed < 16 then lp.Character.Humanoid.WalkSpeed = 70 end end
+        end)
+    end)
+
+-- [[ 7. UNIVERSAL TOOLS ]]
+else
+    AddBtn("TITAN FLY/SPEED", "100 Speed & Infinite Jump", function()
+        lp.Character.Humanoid.WalkSpeed = 100
+        game:GetService("UserInputService").JumpRequest:Connect(function() lp.Character.Humanoid:ChangeState("Jumping") end)
+    end)
+end
