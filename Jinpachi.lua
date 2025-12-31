@@ -1,6 +1,6 @@
--- [[ VEXON TITAN: ULTIMATE DREAM v7.3 ]]
+-- [[ VEXON TITAN: ULTIMATE DREAM v7.4 ]]
 -- TARGET: THE STRONGEST BATTLEGROUNDS
--- MOBILE OPTIMIZED | KYOTO | FLING FIXED | EMOTES UNLOCKED
+-- MOBILE OPTIMIZED | TRUE DOWNSLAM FIXED
 
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
@@ -9,7 +9,6 @@ local UIS = game:GetService("UserInputService")
 local Vim = game:GetService("VirtualInputManager")
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TeleportService = game:GetService("TeleportService")
 
 local lp = Players.LocalPlayer
 local mouse = lp:GetMouse()
@@ -50,7 +49,7 @@ local SideBar = Instance.new("ScrollingFrame", MainFrame)
 SideBar.Size = UDim2.new(0.25, 0, 1, 0)
 SideBar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 SideBar.ScrollBarThickness = 0
-SideBar.CanvasSize = UDim2.new(0, 0, 2.5, 0)
+SideBar.CanvasSize = UDim2.new(0, 0, 3, 0)
 
 local TabList = Instance.new("UIListLayout", SideBar)
 TabList.SortOrder = Enum.SortOrder.LayoutOrder
@@ -98,10 +97,8 @@ end
 local MainP = CreateTab("MAIN")
 local FightP = CreateTab("FIGHT")
 local TechP = CreateTab("TECH")
-local EmoteP = CreateTab("EMOTES") -- NEW TAB
+local EmoteP = CreateTab("EMOTES")
 local LagP = CreateTab("LAG/FPS")
-local AnimP = CreateTab("ANIMS")
-local PlaceP = CreateTab("PLACES")
 local FlingP = CreateTab("FLING")
 local MiscP = CreateTab("MISC")
 
@@ -169,13 +166,37 @@ end)
 AddBtn(MainP, "SPEED (100)", function() lp.Character.Humanoid.WalkSpeed = 100 end)
 
 -- [[ 2. FIGHTING TAB ]]
-AddToggle(FightP, "WALLCOMBO EVERYWHERE", function(s)
-    getgenv().WallCombo = s
-    task.spawn(function()
-        while getgenv().WallCombo do task.wait(0.1)
-             -- Wall combo logic placeholder
-        end
-    end)
+
+-- >> TRUE DOWNSLAM LOGIC <<
+AddToggle(FightP, "TRUE DOWNSLAM (AUTO-JUMP)", function(s)
+    getgenv().TrueDownslam = s
+    local m1_count = 0
+    local last_click = 0
+    
+    if s then
+        -- We connect to input began to count clicks
+        getgenv().TDSConnection = UIS.InputBegan:Connect(function(input, gpe)
+            if gpe then return end
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                local now = tick()
+                if now - last_click > 1.5 then m1_count = 0 end -- Reset if too slow
+                last_click = now
+                m1_count = m1_count + 1
+                
+                if m1_count == 2 then
+                    -- ON 2ND CLICK: JUMP
+                    if lp.Character and lp.Character:FindFirstChild("Humanoid") then
+                        lp.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                    end
+                elseif m1_count >= 3 then
+                    -- ON 3RD CLICK: RESET (The attack will naturally be a downslam because we are in air)
+                    m1_count = 0
+                end
+            end
+        end)
+    else
+        if getgenv().TDSConnection then getgenv().TDSConnection:Disconnect() end
+    end
 end)
 
 AddToggle(FightP, "M1 REACH (25 STUDS)", function(s)
@@ -228,58 +249,23 @@ AddBtn(TechP, "SPAWN 'AUTO KYOTO' BUTTON", function()
     end)
 end)
 
-AddToggle(TechP, "TRUE DOWNSLAM", function(s)
-    getgenv().Downslam = s
-    UIS.InputBegan:Connect(function(i)
-        if getgenv().Downslam and i.UserInputType==Enum.UserInputType.MouseButton1 and lp.Character.Humanoid.FloorMaterial==Enum.Material.Air then
-            lp.Character.HumanoidRootPart.Velocity = Vector3.new(0,-250,0)
-        end
-    end)
-end)
-
--- [[ 4. EMOTES TAB (NEW) ]]
-AddBtn(EmoteP, "UNLOCK ALL EMOTE SLOTS", function()
-    -- Attempts to force enable the UI elements for Slots 5,6,7,8
-    local gui = lp.PlayerGui:FindFirstChild("ScreenGui") -- Adjust name if game updates
+-- [[ 4. EMOTES TAB ]]
+AddBtn(EmoteP, "UNLOCK ALL SLOTS (CLIENT)", function()
+    local gui = lp.PlayerGui:FindFirstChild("ScreenGui")
     if gui then
-        -- Recursively find locked slots
         for _, v in pairs(gui:GetDescendants()) do
             if v.Name:find("Slot") or v.Name:find("Lock") then
                 if v:IsA("ImageButton") or v:IsA("Frame") then
-                    v.Visible = true
-                    v.Active = true
+                    v.Visible = true; v.Active = true
                     if v:FindFirstChild("LockIcon") then v.LockIcon.Visible = false end
                 end
             end
         end
     end
-    print("UI Unlocker Executed")
 end)
 
-AddBtn(EmoteP, "UNLOCK PRESET 2", function()
-    -- Finds the Preset button and enables it
-    local gui = lp.PlayerGui:FindFirstChild("ScreenGui")
-    if gui then
-        for _, v in pairs(gui:GetDescendants()) do
-            if v.Name == "Preset2" or v.Name == "PresetSlot2" then
-                v.Visible = true
-                v.Active = true
-                -- Attempt to bypass click restriction
-                for _, connection in pairs(getconnections(v.MouseButton1Click)) do
-                    connection:Fire()
-                end
-            end
-        end
-    end
-end)
-
-AddBtn(EmoteP, "AUTO-EQUIP TOXIC EMOTES", function()
-    -- Function to spam equip "L" or "Trash" if you own them
-    game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer("/e trash", "All")
-end)
-
--- [[ 5. FLING TAB ]]
-AddToggle(FlingP, "FLING AURA (STABILIZED)", function(s)
+-- [[ 5. FLING TAB (STABILIZED) ]]
+AddToggle(FlingP, "FLING AURA", function(s)
     if s then
         local hrp = lp.Character.HumanoidRootPart
         local b = Instance.new("BodyAngularVelocity", hrp)
@@ -303,7 +289,7 @@ AddToggle(FlingP, "FLING AURA (STABILIZED)", function(s)
     end
 end)
 
--- [[ 6. LAG/MISC ]]
+-- [[ 6. MISC ]]
 AddBtn(LagP, "DESTROY DEBRIS", function()
     for _,v in pairs(workspace:GetDescendants()) do
         if v.Name=="Stone" or v.Name=="Grass" or v.Name=="Debris" then v:Destroy() end
@@ -318,4 +304,4 @@ AddBtn(MiscP, "SERVER HOP", function()
 end)
 
 Tabs[1].Page.Visible = true; Tabs[1].Btn.TextColor3 = Color3.fromRGB(255, 0, 0)
-print("VEXON TITAN v7.3 LOADED")
+print("VEXON TITAN v7.4 LOADED")
