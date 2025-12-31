@@ -1,322 +1,226 @@
--- [[ TITAN ENGINE: TSB DREAM BUILD ]]
--- Architecture: Library V2 | Bypass: Active | Status: UD (Undetected)
+-- [[ VEXON TITAN: MOBILE EDITION ]]
+-- Optimized for: Delta, Fluxus, Hydrogen, Arceus X
 
 local Players = game:GetService("Players")
-local RS = game:GetService("RunService")
-local UIS = game:GetService("UserInputService")
-local Vim = game:GetService("VirtualInputManager")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Lighting = game:GetService("Lighting")
-
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
 local lp = Players.LocalPlayer
-local mouse = lp:GetMouse()
 
--- [[ 1. UI LIBRARY SETUP (Titan Theme) ]]
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Orion/main/source"))()
-local Window = Library:MakeWindow({
-    Name = "🔱 TITAN ENGINE | TSB",
-    HidePremium = false,
-    SaveConfig = true,
-    ConfigFolder = "TitanTSB",
-    IntroEnabled = true,
-    IntroText = "Loading Dream Script..."
-})
+-- [[ 1. MOBILE UI SETUP (Native) ]]
+local ScreenGui = Instance.new("ScreenGui")
+if game.CoreGui:FindFirstChild("RobloxGui") then
+    ScreenGui.Parent = game.CoreGui
+else
+    ScreenGui.Parent = lp:WaitForChild("PlayerGui")
+end
+ScreenGui.Name = "VexonMobile"
+ScreenGui.ResetOnSpawn = false
 
--- [[ VARIABLES & BYPASSES ]]
-getgenv().ReachSize = 15
-getgenv().AutoTech = false
-getgenv().FlingActive = false
-getgenv().AntiRagdoll = false
-getgenv().WallCombo = false
+-- TOGGLE BUTTON (The small button to open menu)
+local OpenBtn = Instance.new("TextButton", ScreenGui)
+OpenBtn.Size = UDim2.new(0, 50, 0, 50)
+OpenBtn.Position = UDim2.new(0.9, -60, 0.4, 0)
+OpenBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+OpenBtn.TextColor3 = Color3.fromRGB(255, 0, 0)
+OpenBtn.Text = "V"
+OpenBtn.TextSize = 30
+OpenBtn.Font = Enum.Font.GothamBold
+OpenBtn.BorderSizePixel = 2
+OpenBtn.BorderColor3 = Color3.fromRGB(255, 0, 0)
+OpenBtn.Active = true
+OpenBtn.Draggable = true -- You can drag this button
 
--- [[ 2. TABS CONFIGURATION ]]
-local MainTab = Window:MakeTab({Name = "Main", Icon = "rbxassetid://4483345998", PremiumOnly = false})
-local FightTab = Window:MakeTab({Name = "Fighting", Icon = "rbxassetid://4483345998", PremiumOnly = false})
-local TechTab = Window:MakeTab({Name = "Tech", Icon = "rbxassetid://4483345998", PremiumOnly = false})
-local FlingTab = Window:MakeTab({Name = "Fling", Icon = "rbxassetid://4483345998", PremiumOnly = false})
-local LagTab = Window:MakeTab({Name = "Lag/FPS", Icon = "rbxassetid://4483345998", PremiumOnly = false})
-local MiscTab = Window:MakeTab({Name = "Misc", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+local Corner = Instance.new("UICorner", OpenBtn); Corner.CornerRadius = UDim.new(0, 10)
 
--- [[ 3. MAIN TAB LOGIC ]]
+-- MAIN MENU FRAME
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 300, 0, 450)
+MainFrame.Position = UDim2.new(0.5, -150, 0.2, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+MainFrame.Visible = false
+MainFrame.BorderSizePixel = 2
+MainFrame.BorderColor3 = Color3.fromRGB(255, 0, 0)
 
-MainTab:AddToggle({
-    Name = "No Dash Cooldown (Anim Cancel)",
-    Default = false,
-    Callback = function(Value)
-        _G.NoDashCD = Value
-        task.spawn(function()
-            while _G.NoDashCD do
-                task.wait()
-                -- Tech: Cancels the dash animation frame perfectly to allow immediate re-dash
-                local char = lp.Character
-                if char then
-                    local hum = char:FindFirstChild("Humanoid")
-                    if hum then
-                        for _, track in pairs(hum:GetPlayingAnimationTracks()) do
-                            if track.Animation.AnimationId == "rbxassetid://10479335397" then -- Dash ID
-                                track:AdjustSpeed(100) -- Force end animation
-                            end
-                        end
-                    end
-                end
-            end
-        end)
-    end
-})
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.BackgroundColor3 = Color3.fromRGB(30, 0, 0)
+Title.Text = "VEXON TITAN | TSB MOBILE"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 16
 
-MainTab:AddToggle({
-    Name = "Anti-Death Counter",
-    Default = false,
-    Callback = function(Value)
-        -- Prevents the game from registering the 'Death' state completely
-        if Value then
-            lp.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
-        else
-            lp.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, true)
-        end
-    end
-})
+-- SCROLLING CONTAINER
+local Scroll = Instance.new("ScrollingFrame", MainFrame)
+Scroll.Size = UDim2.new(1, -10, 1, -50)
+Scroll.Position = UDim2.new(0, 5, 0, 45)
+Scroll.BackgroundTransparency = 1
+Scroll.CanvasSize = UDim2.new(0, 0, 4, 0)
+local Layout = Instance.new("UIListLayout", Scroll)
+Layout.Padding = UDim.new(0, 8)
+Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
-MainTab:AddSlider({
-    Name = "Speed Boost",
-    Min = 16,
-    Max = 200,
-    Default = 16,
-    Color = Color3.fromRGB(255, 0, 0),
-    Increment = 1,
-    ValueName = "WS",
-    Callback = function(Value)
-        getgenv().Speed = Value
-        RS.Stepped:Connect(function()
-            if lp.Character and lp.Character:FindFirstChild("Humanoid") then
-                lp.Character.Humanoid.WalkSpeed = getgenv().Speed
-            end
-        end)
-    end
-})
+-- [[ 2. FUNCTION GENERATOR ]]
+local function AddButton(text, color, callback)
+    local btn = Instance.new("TextButton", Scroll)
+    btn.Size = UDim2.new(0.95, 0, 0, 45)
+    btn.BackgroundColor3 = color
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 14
+    local c = Instance.new("UICorner", btn); c.CornerRadius = UDim.new(0, 6)
+    
+    btn.MouseButton1Click:Connect(function()
+        callback()
+        -- Visual Click Feedback
+        btn.Text = text .. " [ON]"
+        task.wait(0.5)
+        btn.Text = text
+    end)
+end
 
--- [[ 4. FIGHTING TAB LOGIC (The "Dream" Features) ]]
+-- [[ 3. FEATURE LOGIC ]]
 
-FightTab:AddToggle({
-    Name = "M1 Click Reach (Hitbox Expander)",
-    Default = false,
-    Callback = function(Value)
-        _G.ReachActive = Value
-        task.spawn(function()
-            while _G.ReachActive do
-                task.wait(0.1)
-                pcall(function()
-                    -- Logic: Expands the TouchInterest part of the enemy temporarily
-                    for _, v in pairs(Players:GetPlayers()) do
-                        if v ~= lp and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-                            local hrp = v.Character.HumanoidRootPart
-                            if (hrp.Position - lp.Character.HumanoidRootPart.Position).Magnitude < 25 then
-                                hrp.Size = Vector3.new(getgenv().ReachSize, getgenv().ReachSize, getgenv().ReachSize)
-                                hrp.Transparency = 0.5
-                                hrp.CanCollide = false
-                            else
-                                hrp.Size = Vector3.new(2, 2, 1) -- Reset
-                                hrp.Transparency = 1
-                            end
-                        end
-                    end
-                end)
-            end
-        end)
-    end
-})
+-- OPEN/CLOSE LOGIC
+OpenBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = not MainFrame.Visible
+end)
 
-FightTab:AddToggle({
-    Name = "Auto-Wall Combo (Pin)",
-    Default = false,
-    Callback = function(Value)
-        getgenv().WallCombo = Value
-        if Value then
-            -- Logic: Freezes enemy HRP velocity when you hit them
-            print("Wall Combo Active: Hitting enemies will lock their velocity.")
-        end
-    end
-})
-
-FightTab:AddToggle({
-    Name = "Auto-Farm Nearest (TrashCan)",
-    Default = false,
-    Callback = function(Value)
-        _G.AutoFarm = Value
-        task.spawn(function()
-            while _G.AutoFarm do
-                task.wait()
-                pcall(function()
-                    local closest = nil
-                    local dist = math.huge
-                    for _, v in pairs(Players:GetPlayers()) do
-                        if v ~= lp and v.Character and v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health > 0 then
-                            local d = (lp.Character.HumanoidRootPart.Position - v.Character.HumanoidRootPart.Position).Magnitude
-                            if d < dist then dist = d; closest = v end
-                        end
-                    end
-                    if closest then
-                        lp.Character.HumanoidRootPart.CFrame = closest.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,2)
-                        Vim:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-                        task.wait(0.1)
-                        Vim:SendMouseButtonEvent(0, 0, 0, false, game, 1)
-                    end
-                end)
-            end
-        end)
-    end
-})
-
--- [[ 5. TECH TAB (Twisted, Kyoto, Dash) ]]
-
-TechTab:AddButton({
-    Name = "Auto Twisted Tech (Press Q)",
-    Callback = function()
-        -- Tech: Simulates the camera snap and dash required for "Twisted"
-        UIS.InputBegan:Connect(function(input, gpe)
-            if gpe then return end
-            if input.KeyCode == Enum.KeyCode.Q then
-                local root = lp.Character.HumanoidRootPart
-                -- 1. Snap turn 90 degrees
-                root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(90), 0)
-                -- 2. Micro-wait for server register
-                task.wait(0.05)
-                -- 3. Snap back
-                root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(-90), 0)
-            end
-        end)
-        Library:MakeNotification({Name = "Tech Enabled", Content = "Side-Dash to activate Twisted.", Image = "rbxassetid://4483345998", Time = 5})
-    end
-})
-
-TechTab:AddToggle({
-    Name = "True Downslam (Physics)",
-    Default = false,
-    Callback = function(Value)
-        -- Forces downward velocity when in air + M1
-        _G.Downslam = Value
-        UIS.InputBegan:Connect(function(input)
-            if _G.Downslam and input.UserInputType == Enum.UserInputType.MouseButton1 then
-                if lp.Character.Humanoid.FloorMaterial == Enum.Material.Air then
-                    lp.Character.HumanoidRootPart.Velocity = Vector3.new(0, -150, 0)
-                end
-            end
-        end)
-    end
-})
-
-TechTab:AddToggle({
-    Name = "Auto Kyoto (Emote Cancel)",
-    Default = false,
-    Callback = function(Value)
-        -- Spam emotes during dash to break hitbox
-        _G.Kyoto = Value
-        while _G.Kyoto do
-            task.wait(0.5)
-            game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer("/e dance", "All")
+-- > COMBAT SECTION <
+AddButton("🔥 REACH (HITBOX 25)", Color3.fromRGB(150, 0, 0), function()
+    -- Mobile Optimized Reach: Expands enemy hitbox locally
+    _G.Reach = not _G.Reach
+    task.spawn(function()
+        while _G.Reach do
             task.wait(0.1)
-            lp.Character.Humanoid:Move(Vector3.new(0,0,-1), true) -- Cancel
+            pcall(function()
+                for _, v in pairs(Players:GetPlayers()) do
+                    if v ~= lp and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+                        local hrp = v.Character.HumanoidRootPart
+                        local mag = (lp.Character.HumanoidRootPart.Position - hrp.Position).Magnitude
+                        if mag < 25 then
+                            hrp.Size = Vector3.new(20, 20, 20)
+                            hrp.Transparency = 0.8
+                            hrp.CanCollide = false
+                        else
+                            hrp.Size = Vector3.new(2, 2, 1)
+                            hrp.Transparency = 1
+                        end
+                    end
+                end
+            end)
         end
-    end
-})
+    end)
+end)
 
--- [[ 6. FLING TAB (Physics Abuse) ]]
+AddButton("🛡️ ANTI-RAGDOLL (GOD)", Color3.fromRGB(100, 0, 0), function()
+    -- Prevents physics states that knock you down
+    lp.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics, false)
+    lp.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+    lp.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+end)
 
-FlingTab:AddToggle({
-    Name = "Fling Aura (Spin)",
-    Default = false,
-    Callback = function(Value)
-        getgenv().FlingActive = Value
-        if Value then
-            local bambam = Instance.new("BodyAngularVelocity")
-            bambam.Name = "TitanFling"
-            bambam.Parent = lp.Character.HumanoidRootPart
-            bambam.AngularVelocity = Vector3.new(0, 10000, 0)
-            bambam.MaxTorque = Vector3.new(0, math.huge, 0)
-            bambam.P = math.huge
-        else
-            if lp.Character.HumanoidRootPart:FindFirstChild("TitanFling") then
-                lp.Character.HumanoidRootPart.TitanFling:Destroy()
-            end
-            lp.Character.HumanoidRootPart.RotVelocity = Vector3.new(0,0,0)
-        end
-    end
-})
-
-FlingTab:AddButton({
-    Name = "Invisible Tool Fling",
-    Callback = function()
-        -- Teleports tool handle to enemy while keeping you safe
-        local tool = lp.Character:FindFirstChildOfClass("Tool")
-        if not tool then return end
-        tool.Parent = lp.Backpack
-        tool.Handle.Massless = true
-        tool.Grip = CFrame.new(0, 99999, 0) -- Desync Grip
-        tool.Parent = lp.Character
-        -- This logic requires 'Backpack' tools to function effectively
-    end
-})
-
--- [[ 7. LAG/FPS TAB ]]
-
-LagTab:AddButton({
-    Name = "Delete Debris (Stones/Grass)",
-    Callback = function()
-        for _, v in pairs(workspace:GetDescendants()) do
-            if v.Name == "Stone" or v.Name == "Debris" or v.Name == "Grass" or v:IsA("ParticleEmitter") then
-                v:Destroy()
-            end
-        end
-        Lighting.GlobalShadows = false
-        Lighting.FogEnd = 9e9
-    end
-})
-
-LagTab:AddButton({
-    Name = "Full Bright",
-    Callback = function()
-        Lighting.Brightness = 2
-        Lighting.ClockTime = 14
-        Lighting.FogEnd = 100000
-        Lighting.GlobalShadows = false
-        Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128)
-    end
-})
-
--- [[ 8. MISC TAB ]]
-
-MiscTab:AddButton({
-    Name = "Server Hop",
-    Callback = function()
-        local x = game:GetService("HttpService"):JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"))
-        for i,v in pairs(x.data) do
-            if v.playing < v.maxPlayers then
-                game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, v.id, lp)
-            end
-        end
-    end
-})
-
-MiscTab:AddToggle({
-    Name = "Walk on Air (Fly V3)",
-    Default = false,
-    Callback = function(Value)
-        _G.Fly = Value
-        local bv = Instance.new("BodyVelocity", lp.Character.HumanoidRootPart)
-        bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        bv.Velocity = Vector3.new(0,0,0)
-        
-        while _G.Fly do
+AddButton("💀 AUTO-FARM NEAREST", Color3.fromRGB(80, 0, 0), function()
+    -- Teleports behind nearest player and punches
+    _G.Farm = not _G.Farm
+    task.spawn(function()
+        while _G.Farm do
             task.wait()
-            lp.Character.Humanoid.PlatformStand = true
-            local cam = workspace.CurrentCamera.CFrame
-            if UIS:IsKeyDown(Enum.KeyCode.W) then bv.Velocity = cam.LookVector * 50 end
-            if UIS:IsKeyDown(Enum.KeyCode.S) then bv.Velocity = -cam.LookVector * 50 end
-            if not _G.Fly then bv:Destroy(); lp.Character.Humanoid.PlatformStand = false break end
+            pcall(function()
+                local target, dist = nil, math.huge
+                for _, v in pairs(Players:GetPlayers()) do
+                    if v ~= lp and v.Character and v.Character.Humanoid.Health > 0 then
+                        local d = (lp.Character.HumanoidRootPart.Position - v.Character.HumanoidRootPart.Position).Magnitude
+                        if d < dist then dist = d; target = v end
+                    end
+                end
+                if target then
+                    lp.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+                    game:GetService("VirtualInputManager"):SendMouseButtonEvent(0,0,0,true,game,1)
+                    task.wait()
+                    game:GetService("VirtualInputManager"):SendMouseButtonEvent(0,0,0,false,game,1)
+                end
+            end)
+        end
+    end)
+end)
+
+-- > TECH SECTION (MOBILE BUTTONS) <
+AddButton("🌪️ ADD 'TWISTED' BUTTON", Color3.fromRGB(0, 100, 200), function()
+    -- Adds a button to your screen specifically for doing the Tech
+    local TechBtn = Instance.new("TextButton", ScreenGui)
+    TechBtn.Size = UDim2.new(0, 80, 0, 80)
+    TechBtn.Position = UDim2.new(0.8, 0, 0.6, 0)
+    TechBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+    TechBtn.Text = "TWIST"
+    TechBtn.Font = Enum.Font.GothamBlack
+    TechBtn.TextColor3 = Color3.new(1,1,1)
+    local c = Instance.new("UICorner", TechBtn); c.CornerRadius = UDim.new(1,0)
+    TechBtn.Draggable = true
+    
+    TechBtn.MouseButton1Click:Connect(function()
+        -- The logic to snap 90 degrees instantly
+        local root = lp.Character.HumanoidRootPart
+        root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(90), 0)
+        task.wait(0.05)
+        root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(-90), 0)
+    end)
+end)
+
+AddButton("💨 NO DASH COOLDOWN", Color3.fromRGB(0, 80, 150), function()
+    -- Removes Dash Delay
+    local hum = lp.Character:FindFirstChild("Humanoid")
+    if hum then
+        for _, t in pairs(hum:GetPlayingAnimationTracks()) do
+            if t.Animation.AnimationId == "rbxassetid://10479335397" then
+                t:AdjustSpeed(100)
+            end
         end
     end
-})
+end)
 
--- [[ 9. INITIALIZATION ]]
-Library:Init()
-print("🔱 Titan Engine: TSB Module Loaded Successfully")
+-- > LAG & MISC <
+AddButton("📉 FPS BOOST (REMOVE DEBRIS)", Color3.fromRGB(0, 150, 0), function()
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v.Name == "Debris" or v.Name == "Stone" or v.Name == "Grass" then
+            v:Destroy()
+        end
+    end
+    game.Lighting.GlobalShadows = false
+end)
+
+AddButton("👟 SPEED (50)", Color3.fromRGB(0, 100, 0), function()
+    lp.Character.Humanoid.WalkSpeed = 50
+end)
+
+AddButton("🛫 FLY (MOBILE TOGGLE)", Color3.fromRGB(0, 120, 0), function()
+    -- Simple Velocity Fly for Mobile
+    _G.Fly = not _G.Fly
+    if _G.Fly then
+        local bv = Instance.new("BodyVelocity", lp.Character.HumanoidRootPart)
+        bv.Name = "MobileFly"
+        bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bv.Velocity = Vector3.new(0, 50, 0) -- Floats up
+        task.spawn(function()
+            while _G.Fly do
+                task.wait()
+                bv.Velocity = workspace.CurrentCamera.CFrame.LookVector * 50
+            end
+        end)
+    else
+        if lp.Character.HumanoidRootPart:FindFirstChild("MobileFly") then
+            lp.Character.HumanoidRootPart.MobileFly:Destroy()
+        end
+    end
+end)
+
+-- CLOSE BUTTON
+local Close = Instance.new("TextButton", MainFrame)
+Close.Size = UDim2.new(0, 30, 0, 30)
+Close.Position = UDim2.new(1, -35, 0, 5)
+Close.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+Close.Text = "X"
+Close.TextColor3 = Color3.new(1,1,1)
+Close.MouseButton1Click:Connect(function() MainFrame.Visible = false end)
+
+print("Vexon Mobile Loaded")
