@@ -1,131 +1,141 @@
--- [[ 👹 JINPACHI HUB: HYBRID EDITION ]]
--- UNIVERSAL + TSB SOURCE MERGE
--- MOBILE OPTIMIZED (Delta/Fluxus)
+-- [[ ❄️ VEXON UNIVERSAL: WINTER EDITION ]]
+-- PURE UNIVERSAL SCRIPT | SNOWFALL UI
+-- WORKS IN ALL GAMES
 
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local VirtualInputManager = game:GetService("VirtualInputManager")
 local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
+local CoreGui = game:GetService("CoreGui")
 
 local lp = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
+local Mouse = lp:GetMouse()
 
 -- =================================================================
--- 🎨 UI ENGINE: JINPACHI STYLE
+-- ❄️ UI ENGINE: SNOWFALL SYSTEM
 -- =================================================================
 
-local JinpachiGui = Instance.new("ScreenGui")
-JinpachiGui.Name = "JinpachiHybrid"
-if game.CoreGui:FindFirstChild("RobloxGui") then
-    JinpachiGui.Parent = game.CoreGui
+local VexonGui = Instance.new("ScreenGui")
+VexonGui.Name = "VexonWinter"
+if CoreGui:FindFirstChild("RobloxGui") then
+    VexonGui.Parent = CoreGui
 else
-    JinpachiGui.Parent = lp:WaitForChild("PlayerGui")
-end
-
--- > DRAG LOGIC
-local function MakeDraggable(obj)
-    local dragging, dragInput, dragStart, startPos
-    obj.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            dragStart = input.Position
-            startPos = obj.Position
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then dragging = false end
-            end)
-        end
-    end)
-    obj.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-            dragInput = input
-        end
-    end)
-    UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            local delta = input.Position - dragStart
-            obj.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        end
-    end)
+    VexonGui.Parent = lp:WaitForChild("PlayerGui")
 end
 
 -- > OPEN BUTTON
-local OpenBtn = Instance.new("TextButton", JinpachiGui)
-OpenBtn.Size = UDim2.new(0, 130, 0, 45)
+local OpenBtn = Instance.new("TextButton", VexonGui)
+OpenBtn.Size = UDim2.new(0, 50, 0, 50)
 OpenBtn.Position = UDim2.new(0.1, 0, 0.2, 0)
-OpenBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-OpenBtn.Text = "JINPACHI HUB"
-OpenBtn.TextColor3 = Color3.fromRGB(255, 0, 0)
-OpenBtn.Font = Enum.Font.GothamBlack
-OpenBtn.TextSize = 14
+OpenBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+OpenBtn.Text = "❄️"
+OpenBtn.TextSize = 25
 OpenBtn.Draggable = true
-MakeDraggable(OpenBtn)
-Instance.new("UICorner", OpenBtn).CornerRadius = UDim.new(0, 8)
-Instance.new("UIStroke", OpenBtn).Color = Color3.fromRGB(200, 0, 0)
+OpenBtn.AutoButtonColor = true
+Instance.new("UICorner", OpenBtn).CornerRadius = UDim.new(0, 12)
+Instance.new("UIStroke", OpenBtn).Color = Color3.fromRGB(100, 200, 255)
 
 -- > MAIN WINDOW
-local MainFrame = Instance.new("Frame", JinpachiGui)
-MainFrame.Size = UDim2.new(0, 520, 0, 340)
-MainFrame.Position = UDim2.new(0.5, -260, 0.3, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+local MainFrame = Instance.new("Frame", VexonGui)
+MainFrame.Size = UDim2.new(0, 550, 0, 350)
+MainFrame.Position = UDim2.new(0.5, -275, 0.3, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+MainFrame.ClipsDescendants = true -- Keeps snow inside
 MainFrame.Visible = false
-MakeDraggable(MainFrame)
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
+MainFrame.Active = true
+MainFrame.Draggable = true
+
 local MainStroke = Instance.new("UIStroke", MainFrame)
-MainStroke.Color = Color3.fromRGB(180, 0, 0)
-MainStroke.Thickness = 2
+MainStroke.Color = Color3.fromRGB(0, 150, 255)
+MainStroke.Thickness = 1.5
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
+
+-- > SNOWFALL EFFECT
+local SnowContainer = Instance.new("Frame", MainFrame)
+SnowContainer.Size = UDim2.new(1, 0, 1, 0)
+SnowContainer.BackgroundTransparency = 1
+SnowContainer.ZIndex = 1
+
+task.spawn(function()
+    while true do
+        if MainFrame.Visible then
+            local snow = Instance.new("Frame", SnowContainer)
+            snow.Size = UDim2.new(0, math.random(2,4), 0, math.random(2,4))
+            snow.Position = UDim2.new(math.random(), 0, -0.1, 0)
+            snow.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            snow.BackgroundTransparency = 0.3
+            snow.BorderSizePixel = 0
+            Instance.new("UICorner", snow).CornerRadius = UDim.new(1,0)
+            
+            local duration = math.random(3, 6)
+            local targetPos = UDim2.new(snow.Position.X.Scale + (math.random(-10,10)/100), 0, 1.1, 0)
+            
+            TweenService:Create(snow, TweenInfo.new(duration, Enum.EasingStyle.Linear), {Position = targetPos, BackgroundTransparency = 1}):Play()
+            game.Debris:AddItem(snow, duration)
+        end
+        task.wait(0.1)
+    end
+end)
 
 -- > TOP BAR
 local TopBar = Instance.new("Frame", MainFrame)
-TopBar.Size = UDim2.new(1, 0, 0, 40)
-TopBar.BackgroundTransparency = 1
+TopBar.Size = UDim2.new(1, 0, 0, 45)
+TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+TopBar.ZIndex = 2
+Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 8)
 
 local Title = Instance.new("TextLabel", TopBar)
 Title.Size = UDim2.new(1, -50, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "👹 JINPACHI HUB | HYBRID"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Text = "❄️ VEXON UNIVERSAL"
+Title.TextColor3 = Color3.fromRGB(220, 240, 255)
 Title.Font = Enum.Font.GothamBlack
 Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.TextSize = 16
+Title.TextSize = 18
+Title.ZIndex = 3
 
 local CloseBtn = Instance.new("TextButton", TopBar)
-CloseBtn.Size = UDim2.new(0, 30, 0, 30)
-CloseBtn.Position = UDim2.new(1, -35, 0, 5)
+CloseBtn.Size = UDim2.new(0, 35, 0, 35)
+CloseBtn.Position = UDim2.new(1, -40, 0, 5)
 CloseBtn.BackgroundTransparency = 1
 CloseBtn.Text = "X"
-CloseBtn.TextColor3 = Color3.fromRGB(255, 0, 0)
+CloseBtn.TextColor3 = Color3.fromRGB(100, 200, 255)
 CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.TextSize = 18
+CloseBtn.TextSize = 20
+CloseBtn.ZIndex = 3
 
 -- > SIDE BAR
 local SideBar = Instance.new("ScrollingFrame", MainFrame)
-SideBar.Size = UDim2.new(0.28, 0, 1, -50)
-SideBar.Position = UDim2.new(0, 10, 0, 45)
-SideBar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+SideBar.Size = UDim2.new(0.25, 0, 1, -55)
+SideBar.Position = UDim2.new(0, 10, 0, 50)
+SideBar.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 SideBar.ScrollBarThickness = 0
+SideBar.ZIndex = 2
 Instance.new("UICorner", SideBar).CornerRadius = UDim.new(0, 6)
 
 -- > CONTENT AREA
 local ContentArea = Instance.new("Frame", MainFrame)
-ContentArea.Size = UDim2.new(0.68, 0, 1, -50)
-ContentArea.Position = UDim2.new(0.3, 0, 0, 45)
-ContentArea.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+ContentArea.Size = UDim2.new(0.71, 0, 1, -55)
+ContentArea.Position = UDim2.new(0.28, 0, 0, 50)
+ContentArea.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+ContentArea.ZIndex = 2
 Instance.new("UICorner", ContentArea).CornerRadius = UDim.new(0, 6)
 
--- > TAB GENERATOR
+-- > TAB SYSTEM
 local Tabs = {}
 local function CreateTab(name)
     local btn = Instance.new("TextButton", SideBar)
     btn.Size = UDim2.new(1, 0, 0, 40)
     btn.BackgroundTransparency = 1
     btn.Text = name
-    btn.TextColor3 = Color3.fromRGB(150, 150, 150)
+    btn.TextColor3 = Color3.fromRGB(150, 150, 170)
     btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 11
+    btn.TextSize = 12
+    btn.ZIndex = 3
     
     local page = Instance.new("ScrollingFrame", ContentArea)
     page.Size = UDim2.new(1, -10, 1, -10)
@@ -133,6 +143,7 @@ local function CreateTab(name)
     page.Visible = false
     page.BackgroundTransparency = 1
     page.ScrollBarThickness = 2
+    page.ZIndex = 3
     
     local layout = Instance.new("UIListLayout", page)
     layout.Padding = UDim.new(0, 5)
@@ -143,38 +154,50 @@ local function CreateTab(name)
     list.HorizontalAlignment = Enum.HorizontalAlignment.Center
     
     btn.MouseButton1Click:Connect(function()
-        for _, v in pairs(Tabs) do v.Page.Visible=false; v.Btn.TextColor3=Color3.fromRGB(150,150,150) end
-        page.Visible=true; btn.TextColor3=Color3.fromRGB(255, 0, 0)
+        for _, v in pairs(Tabs) do v.Page.Visible=false; v.Btn.TextColor3=Color3.fromRGB(150,150,170) end
+        page.Visible=true; btn.TextColor3=Color3.fromRGB(100, 200, 255)
     end)
     table.insert(Tabs, {Btn = btn, Page = page})
     return page
 end
 
--- TABS
-local UniMain = CreateTab("UNIVERSAL")
-local UniVis = CreateTab("VISUALS")
-local TsbCombat = CreateTab("TSB COMBAT")
-local TsbTech = CreateTab("TSB TECH")
-local OptiTab = CreateTab("FPS/OPTI")
+local PlayerTab = CreateTab("PLAYER")
+local CombatTab = CreateTab("COMBAT")
+local VisualsTab = CreateTab("VISUALS")
+local MiscTab = CreateTab("MISC")
 
 -- UI TOGGLES
 OpenBtn.MouseButton1Click:Connect(function() MainFrame.Visible = true; OpenBtn.Visible = false end)
 CloseBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false; OpenBtn.Visible = true end)
 
-local function AddBtn(p,t,c) local b=Instance.new("TextButton",p);b.Size=UDim2.new(0.95,0,0,38);b.Text=t;b.BackgroundColor3=Color3.fromRGB(30,30,30);b.TextColor3=Color3.new(1,1,1);b.Font=Enum.Font.Gotham;b.TextSize=12;b.MouseButton1Click:Connect(c);Instance.new("UICorner",b).CornerRadius=UDim.new(0,6) end
-local function AddToggle(p,t,c) local b=Instance.new("TextButton",p);b.Size=UDim2.new(0.95,0,0,38);b.Text=t.." [OFF]";b.BackgroundColor3=Color3.fromRGB(30,30,30);b.TextColor3=Color3.new(1,1,1);b.Font=Enum.Font.Gotham;b.TextSize=12;Instance.new("UICorner",b).CornerRadius=UDim.new(0,6);local s=false;b.MouseButton1Click:Connect(function()s=not s;b.Text=t..(s and " [ON]" or " [OFF]");b.BackgroundColor3=s and Color3.fromRGB(0,100,0) or Color3.fromRGB(30,30,30);c(s)end) end
+local function AddBtn(p,t,c) local b=Instance.new("TextButton",p);b.Size=UDim2.new(0.95,0,0,38);b.Text=t;b.BackgroundColor3=Color3.fromRGB(35,35,40);b.TextColor3=Color3.new(1,1,1);b.Font=Enum.Font.Gotham;b.TextSize=12;b.ZIndex=3;b.MouseButton1Click:Connect(c);Instance.new("UICorner",b).CornerRadius=UDim.new(0,6) end
+local function AddToggle(p,t,c) local b=Instance.new("TextButton",p);b.Size=UDim2.new(0.95,0,0,38);b.Text=t.." [OFF]";b.BackgroundColor3=Color3.fromRGB(35,35,40);b.TextColor3=Color3.new(1,1,1);b.Font=Enum.Font.Gotham;b.TextSize=12;b.ZIndex=3;Instance.new("UICorner",b).CornerRadius=UDim.new(0,6);local s=false;b.MouseButton1Click:Connect(function()s=not s;b.Text=t..(s and " [ON]" or " [OFF]");b.BackgroundColor3=s and Color3.fromRGB(0,100,150) or Color3.fromRGB(35,35,40);c(s)end) end
 
 -- =================================================================
--- 🌌 UNIVERSAL FEATURES (ANY GAME)
+-- 🌌 UNIVERSAL FEATURES
 -- =================================================================
 
-AddBtn(UniMain, "SPEED (100)", function()
+-- [[ 1. PLAYER TAB ]]
+AddBtn(PlayerTab, "SPEED (50)", function()
+    if lp.Character and lp.Character:FindFirstChild("Humanoid") then
+        lp.Character.Humanoid.WalkSpeed = 50
+    end
+end)
+
+AddBtn(PlayerTab, "SPEED (100)", function()
     if lp.Character and lp.Character:FindFirstChild("Humanoid") then
         lp.Character.Humanoid.WalkSpeed = 100
     end
 end)
 
-AddToggle(UniMain, "FLY (MOBILE)", function(s)
+AddBtn(PlayerTab, "JUMP POWER (100)", function()
+    if lp.Character and lp.Character:FindFirstChild("Humanoid") then
+        lp.Character.Humanoid.UseJumpPower = true
+        lp.Character.Humanoid.JumpPower = 100
+    end
+end)
+
+AddToggle(PlayerTab, "FLY (MOBILE)", function(s)
     getgenv().Fly = s
     if s then
         local bv = Instance.new("BodyVelocity", lp.Character.HumanoidRootPart)
@@ -183,15 +206,15 @@ AddToggle(UniMain, "FLY (MOBILE)", function(s)
             while getgenv().Fly do task.wait()
                 if lp.Character then lp.Character.Humanoid.PlatformStand = true; bv.Velocity = Workspace.CurrentCamera.CFrame.LookVector * 50 end
             end
-            lp.Character.Humanoid.PlatformStand = false; bv:Destroy()
+            if lp.Character then lp.Character.Humanoid.PlatformStand = false end; bv:Destroy()
         end)
     else
         if lp.Character.HumanoidRootPart:FindFirstChild("UniFly") then lp.Character.HumanoidRootPart.UniFly:Destroy() end
-        lp.Character.Humanoid.PlatformStand = false
+        if lp.Character then lp.Character.Humanoid.PlatformStand = false end
     end
 end)
 
-AddToggle(UniMain, "NOCLIP", function(s)
+AddToggle(PlayerTab, "NOCLIP", function(s)
     getgenv().Noclip = s
     task.spawn(function()
         while getgenv().Noclip do task.wait()
@@ -200,32 +223,18 @@ AddToggle(UniMain, "NOCLIP", function(s)
     end)
 end)
 
-AddToggle(UniVis, "ESP (BOX)", function(s)
-    getgenv().ESP = s
-    if s then
-        task.spawn(function()
-            while getgenv().ESP do task.wait(1)
-                for _,v in pairs(Players:GetPlayers()) do
-                    if v ~= lp and v.Character and not v.Character:FindFirstChild("JinpachiESP") then
-                        local h = Instance.new("Highlight", v.Character); h.Name="JinpachiESP"; h.FillColor=Color3.fromRGB(255,0,0); h.OutlineColor=Color3.fromRGB(255,255,255)
-                    end
-                end
-            end
-        end)
-    else
-        for _,v in pairs(Players:GetPlayers()) do if v.Character and v.Character:FindFirstChild("JinpachiESP") then v.Character.JinpachiESP:Destroy() end end
-    end
+AddToggle(PlayerTab, "INFINITE JUMP", function(s)
+    getgenv().InfJump = s
+    UserInputService.JumpRequest:Connect(function()
+        if getgenv().InfJump and lp.Character then lp.Character.Humanoid:ChangeState("Jumping") end
+    end)
 end)
 
--- =================================================================
--- ⚔️ TSB FEATURES (FROM YOUR FILES)
--- =================================================================
-
--- Source: aimlock mere.txt
-AddToggle(TsbCombat, "MERE AIMLOCK (YAW)", function(s)
-    getgenv().MereAim = s
+-- [[ 2. COMBAT TAB ]]
+AddToggle(CombatTab, "UNIVERSAL AIMBOT", function(s)
+    getgenv().Aimbot = s
     task.spawn(function()
-        while getgenv().MereAim do task.wait()
+        while getgenv().Aimbot do task.wait()
             local closest, dist = nil, math.huge
             for _,v in pairs(Players:GetPlayers()) do
                 if v ~= lp and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
@@ -233,100 +242,81 @@ AddToggle(TsbCombat, "MERE AIMLOCK (YAW)", function(s)
                     if d < dist then dist = d; closest = v end
                 end
             end
-            if closest and closest.Character:FindFirstChild("Head") then
-                local targetPos = closest.Character.Head.Position
-                TweenService:Create(Camera, TweenInfo.new(0.05, Enum.EasingStyle.Sine), {CFrame = CFrame.new(Camera.CFrame.Position, targetPos)}):Play()
-            end
-        end
-    end)
-end)
-
--- Source: aimlock so bunzzz.txt
-AddToggle(TsbCombat, "BUNZ LOCK (FACE ENEMY)", function(s)
-    getgenv().BunzAim = s
-    task.spawn(function()
-        while getgenv().BunzAim do task.wait()
-            local closest, dist = nil, math.huge
-            for _,v in pairs(Players:GetPlayers()) do
-                if v ~= lp and v.Character then
-                    local d = (v.Character.HumanoidRootPart.Position - lp.Character.HumanoidRootPart.Position).Magnitude
-                    if d < dist then dist = d; closest = v end
+            if closest then
+                -- Merebeenie Smooth Tween Logic
+                local target = closest.Character:FindFirstChild("Head") or closest.Character:FindFirstChild("HumanoidRootPart")
+                if target then
+                    TweenService:Create(Camera, TweenInfo.new(0.05, Enum.EasingStyle.Sine), {CFrame = CFrame.new(Camera.CFrame.Position, target.Position)}):Play()
                 end
             end
-            if closest then
-                local hrp = lp.Character.HumanoidRootPart
-                local look = Vector3.new(closest.Character.HumanoidRootPart.Position.X, hrp.Position.Y, closest.Character.HumanoidRootPart.Position.Z)
-                hrp.CFrame = CFrame.new(hrp.Position, look)
-            end
         end
     end)
 end)
 
--- Source: Kyoto.txt
-AddBtn(TsbTech, "KYOTO (DASH + 2)", function()
-    local dashDistance = 22.5
-    local hrp = lp.Character.HumanoidRootPart
-    hrp.CFrame = hrp.CFrame + hrp.CFrame.LookVector * dashDistance
+AddToggle(CombatTab, "HITBOX EXPANDER", function(s)
+    getgenv().Hitbox = s
     task.spawn(function()
-        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Two, false, game)
-        task.wait(0.05)
-        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Two, false, game)
+        while getgenv().Hitbox do task.wait(1)
+            for _,v in pairs(Players:GetPlayers()) do
+                if v ~= lp and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+                    v.Character.HumanoidRootPart.Size = Vector3.new(10,10,10)
+                    v.Character.HumanoidRootPart.Transparency = 0.7
+                    v.Character.HumanoidRootPart.CanCollide = false
+                end
+            end
+        end
     end)
 end)
 
--- Source: Kibav4
-AddToggle(TsbTech, "KIBA V4 (AUTO-COUNTER)", function(s)
-    getgenv().KibaActive = s
+-- [[ 3. VISUALS TAB ]]
+AddToggle(VisualsTab, "ESP (BOX)", function(s)
+    getgenv().ESP = s
     if s then
-        local function onAnim(track)
-            if not getgenv().KibaActive then return end
-            if track.Animation.AnimationId:find("10503381238") then
-                task.delay(0.1, function()
-                    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.W, false, game)
-                    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Q, false, game)
-                    task.wait(0.1)
-                    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.W, false, game)
-                    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Q, false, game)
-                end)
-            end
-        end
-        for _,v in pairs(Players:GetPlayers()) do if v~=lp and v.Character then v.Character.Humanoid.AnimationPlayed:Connect(onAnim) end end
-    end
-end)
-
--- Source: instnat twistedd.txt
-AddToggle(TsbTech, "INSTANT TWISTED (AUTO)", function(s)
-    getgenv().TwistActive = s
-    if s then
-        local char = lp.Character or lp.CharacterAdded:Wait()
-        char:WaitForChild("Humanoid").AnimationPlayed:Connect(function(track)
-            if track.Animation.AnimationId:find("13294471966") then
-                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.LeftShift, false, game)
-                task.wait(0.1)
-                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.LeftShift, false, game)
+        task.spawn(function()
+            while getgenv().ESP do task.wait(1)
+                for _,v in pairs(Players:GetPlayers()) do
+                    if v ~= lp and v.Character and not v.Character:FindFirstChild("UniESP") then
+                        local h = Instance.new("Highlight", v.Character)
+                        h.Name = "UniESP"
+                        h.FillColor = Color3.fromRGB(100, 200, 255)
+                        h.OutlineColor = Color3.fromRGB(255, 255, 255)
+                    end
+                end
             end
         end)
+    else
+        for _,v in pairs(Players:GetPlayers()) do if v.Character and v.Character:FindFirstChild("UniESP") then v.Character.UniESP:Destroy() end end
     end
 end)
 
--- =================================================================
--- ⚡ FPS OPTIMIZATION (FROM FILE)
--- =================================================================
+AddToggle(VisualsTab, "FULLBRIGHT", function(s)
+    if s then Lighting.Brightness=2; Lighting.ClockTime=14; Lighting.GlobalShadows=false
+    else Lighting.Brightness=1; Lighting.GlobalShadows=true end
+end)
 
--- Source: fps booster.txt
-AddBtn(OptiTab, "SWEEP MAP (BOOST)", function()
+-- [[ 4. MISC TAB ]]
+AddBtn(MiscTab, "FPS BOOSTER (CLEAR MAP)", function()
+    -- Merebeenie Sweep Logic
     for _, v in pairs(Workspace:GetDescendants()) do
-        if v:IsA("Terrain") or v:IsA("Decal") or v:IsA("Texture") or v:IsA("ParticleEmitter") or v:IsA("MeshPart") then
+        if v:IsA("Decal") or v:IsA("Texture") or v:IsA("ParticleEmitter") or v:IsA("Terrain") then
             v:Destroy()
         end
-        if v:IsA("Trail") then v.Enabled = false end
+    end
+    Lighting.GlobalShadows = false
+end)
+
+AddBtn(MiscTab, "REJOIN SERVER", function()
+    game:GetService("TeleportService"):Teleport(game.PlaceId, lp)
+end)
+
+AddBtn(MiscTab, "SERVER HOP", function()
+    local x = game:GetService("HttpService"):JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"))
+    for i,v in pairs(x.data) do
+        if v.playing < v.maxPlayers then game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, v.id, lp) end
     end
 end)
 
-AddToggle(OptiTab, "NIGHT MODE", function(s)
-    if s then Lighting.TimeOfDay = "00:00:00"; Lighting.Brightness = 0
-    else Lighting.TimeOfDay = "14:00:00"; Lighting.Brightness = 2 end
-end)
-
-Tabs[1].Page.Visible = true; Tabs[1].Btn.TextColor3 = Color3.fromRGB(0, 255, 255)
-print("👹 JINPACHI HUB HYBRID LOADED")
+-- INIT
+Tabs[1].Page.Visible = true
+Tabs[1].Btn.TextColor3 = Color3.fromRGB(100, 200, 255)
+print("❄️ VEXON UNIVERSAL LOADED")
