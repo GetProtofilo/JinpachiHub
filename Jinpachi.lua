@@ -1,6 +1,6 @@
--- [[ 🚲 BI-CYCLE: UNIVERSAL KEYBOARD ]]
--- GRADE: A+ (DYNAMIC KEYBIND ENGINE)
--- SUPPORTS: TAP, HOLD, & CUSTOM KEYS
+-- [[ 🚲 BI-CYCLE: KEY-NEXUS ]]
+-- STATUS: FIXED & UNIVERSAL
+-- TYPE: VIRTUAL KEYBOARD OVERLAY
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -11,31 +11,36 @@ local CoreGui = game:GetService("CoreGui")
 local lp = Players.LocalPlayer
 
 -- =================================================================
--- 🎨 UI CONFIGURATION
+-- 🎨 SAFE UI SETUP
 -- =================================================================
 
-local C = {
-    Bg      = Color3.fromRGB(15, 15, 20),
-    Dark    = Color3.fromRGB(10, 10, 12),
-    Accent  = Color3.fromRGB(0, 255, 180), -- Bi-Cycle Mint
-    Text    = Color3.fromRGB(240, 240, 240),
-    Btn     = Color3.fromRGB(25, 25, 30),
-    Hold    = Color3.fromRGB(0, 200, 140)
-}
+-- 1. Attempt to find a secure parent for the UI
+local Parent = CoreGui:FindFirstChild("RobloxGui") or CoreGui or lp:WaitForChild("PlayerGui")
 
--- Cleanup
-if CoreGui:FindFirstChild("BiCycleKey") then CoreGui.BiCycleKey:Destroy() end
+-- 2. Cleanup old instances
+if Parent:FindFirstChild("BiCycleKeyboard") then 
+    Parent.BiCycleKeyboard:Destroy() 
+end
 
 local Gui = Instance.new("ScreenGui")
-Gui.Name = "BiCycleKey"
-Gui.Parent = CoreGui
+Gui.Name = "BiCycleKeyboard"
+Gui.Parent = Parent
 Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
+-- COLORS
+local C = {
+    Bg = Color3.fromRGB(12, 12, 15),
+    Sidebar = Color3.fromRGB(18, 18, 22),
+    Accent = Color3.fromRGB(0, 255, 180), -- Mint
+    Text = Color3.fromRGB(240, 240, 240),
+    Btn = Color3.fromRGB(25, 25, 30),
+    Pressed = Color3.fromRGB(0, 200, 140)
+}
+
 -- =================================================================
--- ⚙️ CORE FUNCTIONS
+-- ⚙️ HELPER FUNCTIONS
 -- =================================================================
 
--- Draggable Logic
 local function MakeDraggable(obj)
     local dragging, dragInput, dragStart, startPos
     obj.InputBegan:Connect(function(input)
@@ -55,196 +60,229 @@ local function MakeDraggable(obj)
     end)
 end
 
--- Key Simulator
-local function SimulateKey(keyCode, state)
-    -- State: true = down, false = up
-    VirtualInputManager:SendKeyEvent(state, keyCode, false, game)
+local function SimulateKey(keyCode, isDown)
+    pcall(function()
+        VirtualInputManager:SendKeyEvent(isDown, keyCode, false, game)
+    end)
 end
 
 -- =================================================================
--- 🖥️ MAIN UI
+-- 🖥️ UI ELEMENTS
 -- =================================================================
 
--- > EDITOR BUTTON (The Wrench)
-local EditBtn = Instance.new("ImageButton", Gui)
-EditBtn.Size = UDim2.new(0, 45, 0, 45)
-EditBtn.Position = UDim2.new(0.02, 0, 0.3, 0)
-EditBtn.BackgroundColor3 = C.Dark
-EditBtn.Image = "rbxassetid://6031154871" -- Wrench Icon
-EditBtn.ImageColor3 = C.Accent
-EditBtn.Draggable = true
-Instance.new("UICorner", EditBtn).CornerRadius = UDim.new(0, 10)
-local EditStroke = Instance.new("UIStroke", EditBtn)
-EditStroke.Color = C.Accent; EditStroke.Thickness = 2
+-- > OPEN/CLOSE TOGGLE
+local ToggleBtn = Instance.new("TextButton", Gui)
+ToggleBtn.Size = UDim2.new(0, 50, 0, 50)
+ToggleBtn.Position = UDim2.new(0.05, 0, 0.4, 0)
+ToggleBtn.BackgroundColor3 = C.Bg
+ToggleBtn.Text = "🎹"
+ToggleBtn.TextSize = 25
+ToggleBtn.Draggable = true -- Native draggable for the toggle
+Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 12)
+local ToggleStroke = Instance.new("UIStroke", ToggleBtn)
+ToggleStroke.Color = C.Accent
+ToggleStroke.Thickness = 2
 
--- > KEY CONTAINER (The Keyboard)
-local KeyFrame = Instance.new("Frame", Gui)
-KeyFrame.Name = "KeyContainer"
-KeyFrame.Size = UDim2.new(0, 300, 0, 150)
-KeyFrame.Position = UDim2.new(0.5, -150, 0.7, 0) -- Bottom Center default
-KeyFrame.BackgroundColor3 = Color3.fromRGB(0,0,0)
-KeyFrame.BackgroundTransparency = 0.5
-MakeDraggable(KeyFrame) -- You can move the whole keyboard
-Instance.new("UICorner", KeyFrame).CornerRadius = UDim.new(0, 8)
+-- > MAIN PANEL
+local Main = Instance.new("Frame", Gui)
+Main.Size = UDim2.new(0, 500, 0, 300)
+Main.Position = UDim2.new(0.5, -250, 0.3, 0)
+Main.BackgroundColor3 = C.Bg
+Main.Visible = false
+MakeDraggable(Main)
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
+local MainStroke = Instance.new("UIStroke", Main)
+MainStroke.Color = C.Accent
+MainStroke.Thickness = 1
 
--- Grid Layout for Keys
-local Grid = Instance.new("UIGridLayout", KeyFrame)
-Grid.CellSize = UDim2.new(0, 50, 0, 50)
-Grid.CellPadding = UDim2.new(0, 5, 0, 5)
-Grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
-Grid.VerticalAlignment = Enum.VerticalAlignment.Center
+-- > SIDEBAR (CONTROLS)
+local Sidebar = Instance.new("Frame", Main)
+Sidebar.Size = UDim2.new(0.35, 0, 1, 0)
+Sidebar.BackgroundColor3 = C.Sidebar
+Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 10)
 
--- > SETTINGS PANEL (The Editor)
-local Editor = Instance.new("Frame", Gui)
-Editor.Size = UDim2.new(0, 250, 0, 200)
-Editor.Position = UDim2.new(0.1, 0, 0.3, 0)
-Editor.BackgroundColor3 = C.Main
-Editor.Visible = false
-MakeDraggable(Editor)
-Instance.new("UICorner", Editor).CornerRadius = UDim.new(0, 10)
-local EdStroke = Instance.new("UIStroke", Editor); EdStroke.Color = C.Accent; EdStroke.Thickness = 1.5
-
--- Editor Header
-local EdTitle = Instance.new("TextLabel", Editor)
-EdTitle.Size = UDim2.new(1, 0, 0, 30)
-EdTitle.Text = "KEYBOARD EDITOR"
-EdTitle.Font = Enum.Font.GothamBlack
-EdTitle.TextColor3 = C.Accent
-EdTitle.BackgroundTransparency = 1
+-- Header
+local Title = Instance.new("TextLabel", Sidebar)
+Title.Text = "KEY-NEXUS"
+Title.Font = Enum.Font.GothamBlack
+Title.TextSize = 18
+Title.TextColor3 = C.Accent
+Title.Size = UDim2.new(1, 0, 0, 50)
+Title.BackgroundTransparency = 1
 
 -- Input Box
-local Input = Instance.new("TextBox", Editor)
-Input.Size = UDim2.new(0.8, 0, 0, 40)
-Input.Position = UDim2.new(0.1, 0, 0.25, 0)
-Input.BackgroundColor3 = C.Btn
-Input.TextColor3 = C.Text
-Input.PlaceholderText = "Type Key (e.g. Q, Space)"
-Input.Font = Enum.Font.Gotham
-Instance.new("UICorner", Input).CornerRadius = UDim.new(0, 6)
+local InputBox = Instance.new("TextBox", Sidebar)
+InputBox.Size = UDim2.new(0.85, 0, 0, 40)
+InputBox.Position = UDim2.new(0.075, 0, 0.2, 0)
+InputBox.BackgroundColor3 = C.Btn
+InputBox.Text = ""
+InputBox.PlaceholderText = "Type Key (e.g. F)"
+InputBox.TextColor3 = C.Text
+InputBox.Font = Enum.Font.GothamBold
+InputBox.TextSize = 14
+Instance.new("UICorner", InputBox).CornerRadius = UDim.new(0, 6)
 
 -- Add Button
-local AddBtn = Instance.new("TextButton", Editor)
-AddBtn.Size = UDim2.new(0.8, 0, 0, 35)
-AddBtn.Position = UDim2.new(0.1, 0, 0.5, 0)
+local AddBtn = Instance.new("TextButton", Sidebar)
+AddBtn.Size = UDim2.new(0.85, 0, 0, 35)
+AddBtn.Position = UDim2.new(0.075, 0, 0.35, 0)
 AddBtn.BackgroundColor3 = C.Accent
 AddBtn.Text = "ADD KEY"
+AddBtn.TextColor3 = Color3.fromRGB(0,0,0)
 AddBtn.Font = Enum.Font.GothamBold
-AddBtn.TextColor3 = C.Main
+AddBtn.TextSize = 14
 Instance.new("UICorner", AddBtn).CornerRadius = UDim.new(0, 6)
 
--- Presets
-local PresetLabel = Instance.new("TextLabel", Editor)
-PresetLabel.Size = UDim2.new(1, 0, 0, 20)
-PresetLabel.Position = UDim2.new(0, 0, 0.7, 0)
-PresetLabel.Text = "PRESETS"
-PresetLabel.Font = Enum.Font.Gotham
+-- Presets Label
+local PresetLabel = Instance.new("TextLabel", Sidebar)
+PresetLabel.Text = "QUICK PRESETS"
+PresetLabel.Size = UDim2.new(1, 0, 0, 30)
+PresetLabel.Position = UDim2.new(0, 0, 0.55, 0)
 PresetLabel.TextColor3 = C.TextDim
 PresetLabel.BackgroundTransparency = 1
+PresetLabel.Font = Enum.Font.GothamBold
+PresetLabel.TextSize = 12
 
-local WASDBtn = Instance.new("TextButton", Editor)
-WASDBtn.Size = UDim2.new(0.35, 0, 0, 30)
-WASDBtn.Position = UDim2.new(0.1, 0, 0.82, 0)
-WASDBtn.BackgroundColor3 = C.Btn
-WASDBtn.Text = "WASD"
-WASDBtn.TextColor3 = C.Text
-Instance.new("UICorner", WASDBtn).CornerRadius = UDim.new(0, 6)
+-- Preset Buttons
+local function CreatePresetBtn(text, pos, callback)
+    local btn = Instance.new("TextButton", Sidebar)
+    btn.Size = UDim2.new(0.4, 0, 0, 35)
+    btn.Position = pos
+    btn.BackgroundColor3 = C.Btn
+    btn.Text = text
+    btn.TextColor3 = C.Text
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 12
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    btn.MouseButton1Click:Connect(callback)
+end
 
-local CombatBtn = Instance.new("TextButton", Editor)
-CombatBtn.Size = UDim2.new(0.35, 0, 0, 30)
-CombatBtn.Position = UDim2.new(0.55, 0, 0.82, 0)
-CombatBtn.BackgroundColor3 = C.Btn
-CombatBtn.Text = "Combat"
-CombatBtn.TextColor3 = C.Text
-Instance.new("UICorner", CombatBtn).CornerRadius = UDim.new(0, 6)
+-- > KEYBOARD AREA (Where keys appear)
+local KeyArea = Instance.new("ScrollingFrame", Main)
+KeyArea.Size = UDim2.new(0.63, 0, 0.9, 0)
+KeyArea.Position = UDim2.new(0.36, 0, 0.05, 0)
+KeyArea.BackgroundTransparency = 1
+KeyArea.ScrollBarThickness = 2
+local Grid = Instance.new("UIGridLayout", KeyArea)
+Grid.CellSize = UDim2.new(0, 60, 0, 60)
+Grid.CellPadding = UDim2.new(0, 10, 0, 10)
+
+-- Close X
+local CloseX = Instance.new("TextButton", Main)
+CloseX.Text = "X"
+CloseX.Size = UDim2.new(0, 30, 0, 30)
+CloseX.Position = UDim2.new(1, -30, 0, 0)
+CloseX.BackgroundTransparency = 1
+CloseX.TextColor3 = Color3.fromRGB(200, 50, 50)
+CloseX.Font = Enum.Font.GothamBold
+CloseX.TextSize = 18
 
 -- =================================================================
--- ⚡ LOGIC
+-- ⚡ LOGIC ENGINE
 -- =================================================================
 
-local function CreateKeyButton(keyName)
-    -- Normalize KeyName
-    local success, keyCode = pcall(function() return Enum.KeyCode[keyName] end)
+-- Function to add a key to the grid
+local function AddKeyToGrid(keyName)
+    -- Normalize the key name to find the Enum
+    local cleanName = keyName:gsub(" ", "")
+    local keyCode = nil
     
-    -- Handle special cases or casing
-    if not success or not keyCode then
-        -- Try uppercase first char
-        keyName = keyName:sub(1,1):upper() .. keyName:sub(2):lower()
-        success, keyCode = pcall(function() return Enum.KeyCode[keyName] end)
-        
-        -- Try all upper
-        if not success then
-            keyName = keyName:upper()
-            success, keyCode = pcall(function() return Enum.KeyCode[keyName] end)
-        end
+    -- Try direct match
+    pcall(function() keyCode = Enum.KeyCode[cleanName] end)
+    
+    -- Try uppercase match (e.g. "e" -> "E")
+    if not keyCode then
+        pcall(function() keyCode = Enum.KeyCode[cleanName:upper()] end)
     end
-
-    if not success then 
-        Input.Text = "INVALID KEY" 
+    
+    if not keyCode then
+        InputBox.Text = "INVALID!"
         task.wait(1)
-        Input.Text = ""
-        return 
+        InputBox.Text = ""
+        return
     end
 
     -- Create Button
-    local Btn = Instance.new("TextButton", KeyFrame)
-    Btn.Name = keyName
-    Btn.BackgroundColor3 = C.Btn
-    Btn.Text = keyName:sub(1,3) -- Shorten long names (e.g. LeftShift -> Lef)
-    if #keyName <= 3 then Btn.Text = keyName end
-    Btn.TextColor3 = C.Text
-    Btn.Font = Enum.Font.GothamBold
-    Btn.TextSize = 14
-    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
-    local Stroke = Instance.new("UIStroke", Btn); Stroke.Color = C.Accent; Stroke.Transparency = 0.8
-
-    -- Input Handling (Hold Support)
-    Btn.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            TweenService:Create(Btn, TweenInfo.new(0.1), {BackgroundColor3 = C.Hold}):Play()
-            SimulateKey(keyCode, true) -- Key Down
-        end
-    end)
-
-    Btn.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            TweenService:Create(Btn, TweenInfo.new(0.1), {BackgroundColor3 = C.Btn}):Play()
-            SimulateKey(keyCode, false) -- Key Up
-        end
-    end)
+    local KeyBtn = Instance.new("TextButton", KeyArea)
+    KeyBtn.BackgroundColor3 = C.Btn
+    KeyBtn.Text = keyName:upper()
+    KeyBtn.TextColor3 = C.Text
+    KeyBtn.Font = Enum.Font.GothamBlack
+    KeyBtn.TextSize = 16
+    Instance.new("UICorner", KeyBtn).CornerRadius = UDim.new(0, 8)
+    local Stroke = Instance.new("UIStroke", KeyBtn)
+    Stroke.Color = C.Accent
+    Stroke.Thickness = 1
     
-    -- Update Grid Frame Size dynamically
-    local count = #KeyFrame:GetChildren() - 1 -- minus grid layout
-    -- Logic to resize container if needed, but Grid handles layout mostly.
+    -- INPUT HANDLING (The Magic)
+    KeyBtn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            TweenService:Create(KeyBtn, TweenInfo.new(0.1), {BackgroundColor3 = C.Pressed}):Play()
+            SimulateKey(keyCode, true) -- HOLD DOWN
+        end
+    end)
+
+    KeyBtn.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            TweenService:Create(KeyBtn, TweenInfo.new(0.1), {BackgroundColor3 = C.Btn}):Play()
+            SimulateKey(keyCode, false) -- RELEASE
+        end
+    end)
 end
 
--- > EVENTS
-EditBtn.MouseButton1Click:Connect(function()
-    Editor.Visible = not Editor.Visible
-end)
-
+-- EVENTS
 AddBtn.MouseButton1Click:Connect(function()
-    if Input.Text ~= "" then
-        CreateKeyButton(Input.Text)
-        Input.Text = ""
+    if InputBox.Text ~= "" then
+        AddKeyToGrid(InputBox.Text)
+        InputBox.Text = ""
     end
 end)
 
-WASDBtn.MouseButton1Click:Connect(function()
-    local keys = {"W", "A", "S", "D", "Space"}
-    for _, k in pairs(keys) do CreateKeyButton(k) end
+ToggleBtn.MouseButton1Click:Connect(function()
+    Main.Visible = not Main.Visible
 end)
 
-CombatBtn.MouseButton1Click:Connect(function()
-    local keys = {"One", "Two", "Three", "Four", "R", "F", "Z", "X", "C"}
-    for _, k in pairs(keys) do CreateKeyButton(k) end
+CloseX.MouseButton1Click:Connect(function()
+    Main.Visible = false
 end)
 
--- Initial Setup
-Input.FocusLost:Connect(function(enter)
-    if enter and Input.Text ~= "" then
-        CreateKeyButton(Input.Text)
-        Input.Text = ""
-    end
+-- PRESETS
+CreatePresetBtn("WASD", UDim2.new(0.075, 0, 0.65, 0), function()
+    AddKeyToGrid("W")
+    AddKeyToGrid("A")
+    AddKeyToGrid("S")
+    AddKeyToGrid("D")
+    AddKeyToGrid("Space")
 end)
 
-print("🚲 BI-CYCLE KEYBOARD: LOADED")
+CreatePresetBtn("COMBAT", UDim2.new(0.525, 0, 0.65, 0), function()
+    AddKeyToGrid("One")
+    AddKeyToGrid("Two")
+    AddKeyToGrid("Three")
+    AddKeyToGrid("Four")
+    AddKeyToGrid("F")
+    AddKeyToGrid("R")
+end)
+
+CreatePresetBtn("ARROWS", UDim2.new(0.075, 0, 0.8, 0), function()
+    AddKeyToGrid("Up")
+    AddKeyToGrid("Down")
+    AddKeyToGrid("Left")
+    AddKeyToGrid("Right")
+end)
+
+CreatePresetBtn("UTILITY", UDim2.new(0.525, 0, 0.8, 0), function()
+    AddKeyToGrid("LeftShift")
+    AddKeyToGrid("LeftControl")
+    AddKeyToGrid("Tab")
+    AddKeyToGrid("Q")
+end)
+
+-- NOTIFICATION
+print("🚲 BI-CYCLE KEY-NEXUS LOADED")
+local StarterGui = game:GetService("StarterGui")
+StarterGui:SetCore("SendNotification", {
+    Title = "BI-CYCLE",
+    Text = "Keyboard Loaded! Click 🎹 to open.",
+    Duration = 5
+})
