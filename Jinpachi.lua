@@ -1,80 +1,78 @@
--- // MOBILE OPTIMIZATION PATCH // --
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- 1. Disable Acrylic for performance on mobile
-Window.Acrylic = false 
+local Window = Rayfield:CreateWindow({
+   Name = "Westbound Premium | 6k Community",
+   LoadingTitle = "Initializing...",
+   LoadingSubtitle = "by Badal",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = "WestboundBadal",
+      FileName = "Config"
+   },
+   Discord = {
+      Enabled = false,
+      Invite = "noinvitelink",
+      RememberJoins = true
+   },
+   KeySystem = false, 
+})
 
--- 2. Create a Toggle Button (Draggable & Animated)
-local UserInputService = game:GetService("UserInputService")
-local VirtualInputManager = game:GetService("VirtualInputManager")
-local TweenService = game:GetService("TweenService")
+local MainTab = Window:CreateTab("Main Farm", 4483362458) 
 
-local MobileGui = Instance.new("ScreenGui")
-local ToggleBtn = Instance.new("ImageButton")
-local UICorner = Instance.new("UICorner")
-local UIStroke = Instance.new("UIStroke")
+-- // Logic Variables
+local isFarming = false
 
-MobileGui.Name = "WestboundMobileGui"
-MobileGui.Parent = game.CoreGui
+-- // Auto Farm Logic
+local function TumbleweedFarm()
+    task.spawn(function()
+        while isFarming do
+            pcall(function()
+                -- 1. Spawn Tumbleweed (Paste your remote here)
+                -- game:GetService("ReplicatedStorage").ExampleRemote:FireServer()
+                
+                task.wait(0.5)
 
-ToggleBtn.Name = "ToggleBtn"
-ToggleBtn.Parent = MobileGui
-ToggleBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-ToggleBtn.Position = UDim2.new(0.1, 0, 0.2, 0) -- Initial position
-ToggleBtn.Size = UDim2.new(0, 50, 0, 50)
-ToggleBtn.Image = "rbxassetid://3926307971" -- Settings Icon
-ToggleBtn.ImageRectOffset = Vector2.new(324, 124)
-ToggleBtn.ImageRectSize = Vector2.new(36, 36)
+                -- 2. Tween to Coord
+                local TweenService = game:GetService("TweenService")
+                local Player = game.Players.LocalPlayer
+                local Root = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+                
+                if Root then
+                    -- REPLACE X,Y,Z with the real coordinates
+                    local targetCFrame = CFrame.new(100, 50, 100) 
+                    
+                    local tweenInfo = TweenInfo.new(2, Enum.EasingStyle.Linear)
+                    local tween = TweenService:Create(Root, tweenInfo, {CFrame = targetCFrame})
+                    tween:Play()
+                    tween.Completed:Wait()
+                end
 
-UICorner.CornerRadius = UDim.new(0.5, 0)
-UICorner.Parent = ToggleBtn
+                -- 3. Rob Loop
+                for i = 1, 5 do 
+                    if not isFarming then break end
+                    -- game:GetService("ReplicatedStorage").RobRemote:FireServer()
+                    task.wait(0.1)
+                end
 
-UIStroke.Parent = ToggleBtn
-UIStroke.Thickness = 2
-UIStroke.Color = Color3.fromRGB(60, 60, 60)
-UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-
--- Animation on Click
-ToggleBtn.MouseButton1Click:Connect(function()
-    -- Simulates pressing "LeftControl" to toggle the Fluent UI
-    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.LeftControl, false, game)
-    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.LeftControl, false, game)
-    
-    -- Button bounce animation
-    TweenService:Create(ToggleBtn, TweenInfo.new(0.1), {Size = UDim2.new(0, 40, 0, 40)}):Play()
-    task.wait(0.1)
-    TweenService:Create(ToggleBtn, TweenInfo.new(0.1), {Size = UDim2.new(0, 50, 0, 50)}):Play()
-end)
-
--- Draggable Logic (Smooth)
-local dragging, dragInput, dragStart, startPos
-
-local function update(input)
-    local delta = input.Position - dragStart
-    ToggleBtn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+                -- 4. Return to Safezone
+                -- game:GetService("ReplicatedStorage").SafezoneRemote:FireServer()
+            end)
+            
+            task.wait(1)
+        end
+    end)
 end
 
-ToggleBtn.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = ToggleBtn.Position
-        
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
-    end
-end)
+local Toggle = MainTab:CreateToggle({
+   Name = "Auto Farm Tumbleweed",
+   CurrentValue = false,
+   Flag = "AutoFarm", 
+   Callback = function(Value)
+      isFarming = Value
+      if Value then
+          TumbleweedFarm()
+      end
+   end,
+})
 
-ToggleBtn.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement then
-        dragInput = input
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        update(input)
-    end
-end)
+Rayfield:LoadConfiguration()
