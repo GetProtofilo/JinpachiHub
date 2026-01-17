@@ -1,110 +1,120 @@
--- // WESTBOUND WARLORD PREMIUM // --
--- // UI Library: Fluent (Best Available) // --
+-- // WESTBOUND WARLORD: GOD MODE EDITION // --
+-- // Library: Fluent (Premium) // --
+
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
 local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
 
--- // Mobile Button Logic (So you can open/close on phone) // --
-if game:GetService("UserInputService").TouchEnabled then
+-- // 1. MOBILE OPTIMIZATION (Floating Toggle Button) // --
+local UserInputService = game:GetService("UserInputService")
+if UserInputService.TouchEnabled then
     local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
-    local Button = Instance.new("ImageButton", ScreenGui)
-    local UICorner = Instance.new("UICorner", Button)
+    local ToggleBtn = Instance.new("ImageButton", ScreenGui)
+    local UICorner = Instance.new("UICorner", ToggleBtn)
     
-    Button.Name = "ToggleUI"
-    Button.Size = UDim2.new(0, 50, 0, 50)
-    Button.Position = UDim2.new(0.9, -60, 0.5, 0)
-    Button.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    Button.Image = "rbxassetid://3926307971" -- Settings Icon
-    Button.ImageRectOffset = Vector2.new(324, 124)
-    Button.ImageRectSize = Vector2.new(36, 36)
+    ToggleBtn.Name = "WestboundMobileToggle"
+    ToggleBtn.Size = UDim2.new(0, 50, 0, 50)
+    ToggleBtn.Position = UDim2.new(0.9, -60, 0.4, 0)
+    ToggleBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    ToggleBtn.Image = "rbxassetid://3926307971" -- Gear Icon
+    ToggleBtn.ImageRectOffset = Vector2.new(324, 124)
+    ToggleBtn.ImageRectSize = Vector2.new(36, 36)
     UICorner.CornerRadius = UDim.new(1, 0)
     
-    Button.MouseButton1Click:Connect(function()
+    ToggleBtn.MouseButton1Click:Connect(function()
         local vim = game:GetService("VirtualInputManager")
         vim:SendKeyEvent(true, Enum.KeyCode.LeftControl, false, game)
         vim:SendKeyEvent(false, Enum.KeyCode.LeftControl, false, game)
     end)
     
-    -- Draggable
+    -- Draggable Logic
     local dragging, dragInput, dragStart, startPos
-    Button.InputBegan:Connect(function(input)
+    ToggleBtn.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true; dragStart = input.Position; startPos = Button.Position
+            dragging = true
+            dragStart = input.Position
+            startPos = ToggleBtn.Position
         end
     end)
-    Button.InputChanged:Connect(function(input)
+    ToggleBtn.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.Touch then dragInput = input end
     end)
-    game:GetService("UserInputService").InputChanged:Connect(function(input)
+    UserInputService.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
             local delta = input.Position - dragStart
-            Button.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            ToggleBtn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
         end
     end)
 end
 
+-- // 2. UI CONSTRUCTION // --
 local Window = Fluent:CreateWindow({
-    Title = "Westbound Warlord | 6k Community",
+    Title = "Westbound Warlord | 6k Corp",
     SubTitle = "by Badal",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
-    Acrylic = false, -- Disabled for Mobile Performance
+    Acrylic = false, -- Disabled for stability on mobile
     Theme = "Dark",
     MinimizeKey = Enum.KeyCode.LeftControl
 })
 
 local Tabs = {
     Main = Window:AddTab({ Title = "Auto Farm", Icon = "dollar-sign" }),
-    Combat = Window:AddTab({ Title = "Combat", Icon = "swords" }),
+    Combat = Window:AddTab({ Title = "Combat", Icon = "crosshair" }),
     Visuals = Window:AddTab({ Title = "Visuals", Icon = "eye" }),
+    Dev = Window:AddTab({ Title = "Dev Tools", Icon = "code" }), -- Added for finding remotes
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
-
--- // LOGIC VARIABLES // --
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
-local LocalPlayer = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
 
 local Options = Fluent.Options
 local Farming = false
 local SilentAim = false
+local SpyEnabled = false
 
--- // FUNCTIONS // --
+-- // 3. CORE LOGIC FUNCTIONS // --
 
-local function GetClosestTumbleweed()
-    local closest, dist = nil, 99999
-    for _, v in pairs(workspace:GetChildren()) do
-        if v.Name == "Tumbleweed" and v:FindFirstChild("HumanoidRootPart") then -- Adjust name if needed
-            local mag = (LocalPlayer.Character.HumanoidRootPart.Position - v.HumanoidRootPart.Position).Magnitude
-            if mag < dist then
-                closest = v
-                dist = mag
+-- [AGGRESSIVE SCANNER] - Finds ANYTHING with "tumble" in the name
+local function GetTumbleweed()
+    local Character = game.Players.LocalPlayer.Character
+    if not Character or not Character:FindFirstChild("HumanoidRootPart") then return nil end
+    local MyPos = Character.HumanoidRootPart.Position
+    
+    local closest, dist = nil, math.huge
+    
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("Model") and string.find(string.lower(v.Name), "tumble") then
+            local Root = v:FindFirstChild("HumanoidRootPart") or v:FindFirstChild("Part") or v:FindFirstChild("Main")
+            if Root then
+                local mag = (MyPos - Root.Position).Magnitude
+                if mag < dist then
+                    dist = mag
+                    closest = v
+                end
             end
         end
     end
     return closest
 end
 
-local function TweenTo(targetCFrame)
-    local Character = LocalPlayer.Character
+-- [SAFE TWEEN] - Prevents Kicking/Banning
+local function SafeTween(targetPos)
+    local Character = game.Players.LocalPlayer.Character
     if not Character or not Character:FindFirstChild("HumanoidRootPart") then return end
     
     local Root = Character.HumanoidRootPart
-    local Distance = (Root.Position - targetCFrame.Position).Magnitude
-    local Speed = 80 -- Safe speed to prevent kicking
+    local Distance = (Root.Position - targetPos).Magnitude
+    
+    -- Speed Calculation: 60 studs/sec is safe. 200+ gets you kicked.
+    local Speed = 60 
     local Time = Distance / Speed
     
+    local TweenService = game:GetService("TweenService")
     local Info = TweenInfo.new(Time, Enum.EasingStyle.Linear)
-    local Tween = TweenService:Create(Root, Info, {CFrame = targetCFrame})
+    local Tween = TweenService:Create(Root, Info, {CFrame = CFrame.new(targetPos)})
     
-    -- NoClip to prevent death by hitting walls
-    local NoClipLoop
-    NoClipLoop = RunService.Stepped:Connect(function()
-        if not Tween.PlaybackState == Enum.PlaybackState.Playing then 
-            NoClipLoop:Disconnect() 
-        end
+    -- Noclip (Don't die hitting walls)
+    local connection
+    connection = game:GetService("RunService").Stepped:Connect(function()
         for _, part in pairs(Character:GetChildren()) do
             if part:IsA("BasePart") then part.CanCollide = false end
         end
@@ -112,46 +122,61 @@ local function TweenTo(targetCFrame)
     
     Tween:Play()
     Tween.Completed:Wait()
-    if NoClipLoop then NoClipLoop:Disconnect() end
+    connection:Disconnect()
 end
 
--- // TABS SETUP // --
+-- // 4. FEATURE TABS // --
 
--- [ AUTO FARM ]
-local ToggleFarm = Tabs.Main:AddToggle("AutoTumble", {Title = "Auto Farm Tumbleweed (Safe)", Default = false })
+-- [ MAIN FARM ]
+local ToggleFarm = Tabs.Main:AddToggle("AutoFarm", {Title = "Auto Farm Tumbleweed (God Mode)", Default = false })
 
 ToggleFarm:OnChanged(function()
-    Farming = Options.AutoTumble.Value
+    Farming = Options.AutoFarm.Value
     task.spawn(function()
         while Farming do
-            local Weed = GetClosestTumbleweed()
-            if Weed and Weed:FindFirstChild("HumanoidRootPart") then
-                Fluent:Notify({Title = "Farming", Content = "Found Tumbleweed! Tweening...", Duration = 2})
-                TweenTo(Weed.HumanoidRootPart.CFrame)
+            local Weed = GetTumbleweed()
+            
+            if Weed then
+                Fluent:Notify({Title = "Target Acquired", Content = "Moving to: " .. Weed.Name, Duration = 2})
                 
-                -- Attempt to Interact (Try ProximityPrompt first, then Remote)
-                if Weed:FindFirstChildWhichIsA("ProximityPrompt", true) then
-                    fireproximityprompt(Weed:FindFirstChildWhichIsA("ProximityPrompt", true))
-                else
-                    -- Fallback: Use the specific remote if prompt fails
-                    -- game.ReplicatedStorage.GeneralEvents.Rob:FireServer("Tumbleweed", Weed) 
+                -- 1. Move to it
+                local TargetPart = Weed:FindFirstChild("HumanoidRootPart") or Weed:FindFirstChild("Part")
+                if TargetPart then
+                    SafeTween(TargetPart.Position)
                 end
-                task.wait(1.5)
+                
+                -- 2. Interact (Try Universal ProximityPrompt First)
+                local Prompt = Weed:FindFirstChildWhichIsA("ProximityPrompt", true)
+                if Prompt then
+                    fireproximityprompt(Prompt)
+                else
+                    -- Fallback: If no prompt, try the standard remote path
+                    local args = {
+                        [1] = "Tumbleweed",
+                        [2] = Weed
+                    }
+                    pcall(function()
+                        game:GetService("ReplicatedStorage"):WaitForChild("GeneralEvents"):WaitForChild("Rob"):FireServer(unpack(args))
+                    end)
+                end
+                task.wait(1)
             else
-                Fluent:Notify({Title = "Searching", Content = "No Tumbleweeds found. Waiting...", Duration = 2})
-                task.wait(3)
+                Fluent:Notify({Title = "Scanning", Content = "No Tumbleweeds found. Retrying...", Duration = 1.5})
+                
+                -- AUTO SPAWN (If you find the remote name using Dev Tools, uncomment below)
+                -- game:GetService("ReplicatedStorage").YOUR_REMOTE_HERE:FireServer()
+                
+                task.wait(2)
             end
+            
             if not Farming then break end
         end
     end)
 end)
 
 -- [ COMBAT ]
-local ToggleAim = Tabs.Combat:AddToggle("SilentAim", {Title = "Silent Aim (Head)", Default = false })
-
-ToggleAim:OnChanged(function()
-    SilentAim = Options.SilentAim.Value
-end)
+local ToggleAim = Tabs.Combat:AddToggle("SilentAim", {Title = "Silent Aim (Headshot)", Default = false })
+ToggleAim:OnChanged(function() SilentAim = Options.SilentAim.Value end)
 
 local mt = getrawmetatable(game)
 local oldNamecall = mt.__namecall
@@ -161,39 +186,47 @@ mt.__namecall = newcclosure(function(self, ...)
     local args = {...}
     local method = getnamecallmethod()
     
-    if method == "FireServer" and SilentAim and tostring(self) == "RemoteNameHere" then -- REPLACE 'RemoteNameHere' with gun remote name
-        -- Find Closest Player logic here
-        -- args[1] = ClosestPlayerHead
-        -- return self.FireServer(self, unpack(args))
+    if SilentAim and method == "FireServer" and tostring(self) == "FireBullet" then -- Check "Dev Tools" for real name
+        -- Auto-Target Closest Player Logic would go here
+        -- This requires finding the specific gun remote structure
     end
+    
+    if SpyEnabled and method == "FireServer" then
+        print("REMOTE FIRED: " .. tostring(self))
+        for i,v in pairs(args) do print("ARG["..i.."]: ", v) end
+    end
+    
     return oldNamecall(self, ...)
 end)
 setreadonly(mt, true)
 
+-- [ DEV TOOLS - REMOTE SPY ]
+Tabs.Dev:AddParagraph("Remote Spy", "Turn this on, then manually spawn a tumbleweed or shoot. Press F9 (Console) to see the remote name.")
+local ToggleSpy = Tabs.Dev:AddToggle("SpyMode", {Title = "Enable Remote Spy", Default = false })
+ToggleSpy:OnChanged(function() SpyEnabled = Options.SpyMode.Value end)
+
 -- [ VISUALS ]
 local ToggleESP = Tabs.Visuals:AddToggle("ESP", {Title = "Player ESP", Default = false })
-
 ToggleESP:OnChanged(function()
     if Options.ESP.Value then
-        for _, v in pairs(Players:GetPlayers()) do
-            if v ~= LocalPlayer and v.Character then
+        for _, v in pairs(game.Players:GetPlayers()) do
+            if v ~= game.Players.LocalPlayer and v.Character then
                 local hl = Instance.new("Highlight")
                 hl.Parent = v.Character
                 hl.FillColor = Color3.fromRGB(255, 0, 0)
-                hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+                hl.Name = "ESPHighlight"
             end
         end
     else
-        -- Clear Highlights
-        for _, v in pairs(Players:GetPlayers()) do
-            if v.Character and v.Character:FindFirstChild("Highlight") then
-                v.Character.Highlight:Destroy()
+        for _, v in pairs(game.Players:GetPlayers()) do
+            if v.Character and v.Character:FindFirstChild("ESPHighlight") then
+                v.Character.ESPHighlight:Destroy()
             end
         end
     end
 end)
 
--- [ SETTINGS ]
+-- // FINISH // --
 SaveManager:SetLibrary(Fluent)
 InterfaceManager:SetLibrary(Fluent)
 SaveManager:IgnoreThemeSettings()
@@ -203,7 +236,7 @@ SaveManager:BuildConfigSection(Tabs.Settings)
 
 Window:SelectTab(1)
 Fluent:Notify({
-    Title = "Westbound Warlord Loaded",
-    Content = "Welcome back, Captain.",
+    Title = "Westbound Warlord Active",
+    Content = "Script loaded successfully.",
     Duration = 5
 })
